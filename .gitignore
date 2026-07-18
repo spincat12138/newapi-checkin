@@ -1,0 +1,23 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+newapi-checkin
+
+# Config with secrets
+config.yaml
+
+# Runtime logs
+*.log
+
+# Go
+vendor/
+
+# IDE / OS
+.aionrs/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

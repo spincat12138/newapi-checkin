@@ -1,0 +1,11 @@
+services:
+  checkin:
+    image: ${NEWAPI_CHECKIN_IMAGE:-newapi-checkin:local}
+    build:
+      context: .
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - ./logs:/logs
+    restart: "no"

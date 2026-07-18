@@ -1,0 +1,35 @@
+# NewAPI / AnyRouter 站点签到配置
+# 复制为 config.yaml 后填写真实信息
+
+timeout_seconds: 30
+
+sites:
+  # 推荐：access_token + user_id
+  # 很多 NewAPI 站点强制要求请求头 New-Api-User = 你的用户 ID
+  - name: "示例站点-Token"
+    base_url: "https://example.com"
+    platform: "new-api" # new-api | any-router | one-api | veloera | done-hub | new-api-like
+    credential_type: "access_token"
+    access_token: "你的 access_token"
+    # 必填（多数 NewAPI 站点）：用户 ID
+    # 获取方式：浏览器登录后 F12 → Network → 点开 /api/user/self 等请求 → Request Headers 里的 New-Api-User
+    user_id: 1
+    # 可选自定义请求头
+    # headers:
+    #   X-Custom: value
+
+  # Session Cookie：必须填写完整的 Cookie name=value，不包含 "Cookie:" 前缀
+  - name: "示例站点-Cookie"
+    base_url: "https://cookie.example.com"
+    platform: "any-router"
+    credential_type: "session_cookie"
+    session_cookie: "session=你的会话值"
+    user_id: 2
+
+  # 备选：用户名密码（登录成功后通常能拿到 user id）
+  - name: "示例站点-账密"
+    base_url: "https://example2.com"
+    platform: "any-router"
+    credential_type: "username_password"
+    username: "your_username"
+    password: "your_password"
