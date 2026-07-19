@@ -5,6 +5,7 @@
 *.so
 *.dylib
 newapi-checkin
+newapi-import-config
 
 # Config with secrets
 config.yaml

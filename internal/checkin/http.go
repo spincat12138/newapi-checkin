@@ -21,6 +21,9 @@ var defaultHTTPClient = &http.Client{
 	},
 }
 
+// httpResult preserves both the decoded JSON view and the raw response. Higher
+// layers use Payload for compatibility logic while diagnostics can still report
+// status, headers, or truncated non-JSON bodies.
 type httpResult struct {
 	StatusCode int
 	Header     http.Header
@@ -28,6 +31,8 @@ type httpResult struct {
 	Payload    map[string]any
 }
 
+// buildSiteURL joins the already-normalized site root with an API path without
+// allowing duplicate or missing separators.
 func buildSiteURL(baseURL, path string) string {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	if !strings.HasPrefix(path, "/") {
@@ -36,6 +41,8 @@ func buildSiteURL(baseURL, path string) string {
 	return baseURL + path
 }
 
+// applyDefaultHeaders supplies browser-like, cache-resistant defaults. Explicit
+// site or per-request headers are applied later and therefore take precedence.
 func applyDefaultHeaders(req *http.Request, hasBody bool) {
 	if hasBody && req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
@@ -51,6 +58,10 @@ func applyDefaultHeaders(req *http.Request, hasBody bool) {
 	}
 }
 
+// doRequest is the single HTTP boundary for the package. It serializes JSON,
+// layers headers in precedence order, detects Cloudflare interstitials, decodes
+// object responses, and turns non-2xx or malformed bodies into contextual
+// errors without hiding the captured response metadata.
 func doRequest(ctx context.Context, site config.Site, method, requestURL string, body any, headers map[string]string) (*httpResult, error) {
 	var bodyReader io.Reader
 	if body != nil {
@@ -78,6 +89,8 @@ func doRequest(ctx context.Context, site config.Site, method, requestURL string,
 		}
 	}
 
+	// Header precedence is: defaults < derived Origin/Referer < site config <
+	// call-specific authentication or workflow headers.
 	for key, value := range site.Headers {
 		if strings.TrimSpace(key) != "" && strings.TrimSpace(value) != "" {
 			req.Header.Set(key, value)
@@ -148,6 +161,8 @@ func requestJSON(ctx context.Context, site config.Site, method, requestURL strin
 	return result.Payload, nil
 }
 
+// isCloudflareResponse recognizes HTML/browser challenges that would otherwise
+// surface as opaque HTTP errors or JSON decode failures.
 func isCloudflareResponse(statusCode int, header http.Header, body []byte) bool {
 	if statusCode != 403 && statusCode != 503 && statusCode != 429 {
 		return false
@@ -164,6 +179,8 @@ func isCloudflareResponse(statusCode int, header http.Header, body []byte) bool 
 			strings.Contains(text, "checking your browser"))
 }
 
+// extractResponseMessage normalizes the message locations used by common
+// NewAPI forks.
 func extractResponseMessage(payload map[string]any) string {
 	if payload == nil {
 		return ""
@@ -227,6 +244,9 @@ func buildAuthHeaderVariants(credential authCredential) []map[string]string {
 	return variants
 }
 
+// managedUserIDHeaders emits known header spellings used by NewAPI forks. They
+// all carry the same ID so one request can satisfy deployments that read any
+// particular variant.
 func managedUserIDHeaders(userID int) map[string]string {
 	if userID <= 0 {
 		return nil
@@ -245,6 +265,8 @@ func managedUserIDHeaders(userID int) map[string]string {
 	}
 }
 
+// mergeHeaders creates a fresh map and applies later maps last, matching the
+// header precedence used by the workflow.
 func mergeHeaders(parts ...map[string]string) map[string]string {
 	out := make(map[string]string)
 	for _, part := range parts {
@@ -286,6 +308,7 @@ func jsonString(value any) string {
 	}
 }
 
+// jsonBool accepts the loose boolean encodings found across compatible APIs.
 func jsonBool(value any) bool {
 	switch v := value.(type) {
 	case bool:
@@ -309,6 +332,8 @@ func jsonBool(value any) bool {
 	}
 }
 
+// nestedValue walks decoded JSON objects without panicking on a missing or
+// differently typed intermediate node.
 func nestedValue(root map[string]any, keys ...string) any {
 	var current any = root
 	for _, key := range keys {
@@ -335,6 +360,8 @@ func parseOrigin(baseURL string) string {
 	return u.Scheme + "://" + u.Host
 }
 
+// isUserIDHeaderError classifies both transport errors and decoded API messages
+// so discovery/retry logic can react consistently.
 func isUserIDHeaderError(err error, payload map[string]any) bool {
 	msg := ""
 	if err != nil {

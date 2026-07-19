@@ -2,7 +2,10 @@ package checkin
 
 import "time"
 
-// Result is the outcome of a single site check-in attempt.
+// Result is the complete observable outcome of a single site attempt. Pointer
+// amounts distinguish an unavailable value from a legitimate zero reward or
+// zero balance; BalanceError is kept separate because balance lookup is useful
+// but does not change the success of an already confirmed check-in.
 type Result struct {
 	Site            string
 	CheckedAt       time.Time
@@ -15,7 +18,9 @@ type Result struct {
 	Error           string
 }
 
-// SitePlatform identifiers supported by this tool.
+// SitePlatform identifiers supported by this tool. They currently share the
+// NewAPI-compatible request flow but remain explicit for platform-specific
+// response handling such as OneAPI's used_quota subtraction.
 const (
 	PlatformNewAPI     = "new-api"
 	PlatformAnyRouter  = "any-router"
@@ -30,6 +35,7 @@ type authCredential struct {
 	Value string
 }
 
+// supportsCheckin is the early allow-list used before any network request.
 func supportsCheckin(platform string) bool {
 	switch platform {
 	case PlatformNewAPI, PlatformAnyRouter, PlatformOneAPI, PlatformVeloera, PlatformDoneHub, PlatformNewAPILike:
@@ -39,6 +45,8 @@ func supportsCheckin(platform string) bool {
 	}
 }
 
+// isNewAPILikePlatform documents the compatibility family independently from
+// the public support check; callers can use it for family-wide behavior.
 func isNewAPILikePlatform(platform string) bool {
 	switch platform {
 	case PlatformNewAPI, PlatformOneAPI, PlatformVeloera, PlatformDoneHub, PlatformNewAPILike, PlatformAnyRouter:

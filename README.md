@@ -12,6 +12,7 @@
 |------|------|
 | [agent.md](agent.md) | Agent / 开发入口：背景、架构、测试方式 |
 | [doc/](doc/README.md) | 实现细节（配置、导入、签到流程等） |
+| [项目结构图](doc/project-architecture.html) | 可交互浏览模块、调用链与核心约束 |
 
 ## 支持平台
 
@@ -40,17 +41,17 @@
 导出的备份一般为 `accounts-backup-*.json`，结构含 `accounts.accounts[]`：
 
 ```bash
-go run ./cmd/checkin import -from accounts-backup.json -out config.yaml
+go run ./cmd/import-config -from accounts-backup.json -out config.yaml
 ```
 
 常用选项：
 
 ```bash
 # 同时导入已禁用账号
-go run ./cmd/checkin import -from accounts-backup.json -out config.yaml -include-disabled
+go run ./cmd/import-config -from accounts-backup.json -out config.yaml -include-disabled
 
 # 仅导入开启了自动签到的账号
-go run ./cmd/checkin import -from accounts-backup.json -out config.yaml -require-auto-checkin
+go run ./cmd/import-config -from accounts-backup.json -out config.yaml -require-auto-checkin
 ```
 
 导入规则：
@@ -144,11 +145,81 @@ go run ./cmd/checkin -config config.yaml -log logs/checkin.log
 
 控制台中的站点明细、结果日志、余额查询错误和最终汇总会原样追加到日志文件。金额按 NewAPI 的 `500000 quota = $1` 换算。站点未返回奖励或余额接口不可用时显示 `不可用`，并额外打印余额查询错误。
 
+### 图片验证码签到（如「简直了」jianzhile.vip）
+
+部分站点开启了签到验证码：`GET /api/user/checkin` 只是**状态查询**（`查询成功` / `captcha_enabled`），**不是**签到动作。程序会：
+
+1. 用 `GET /api/user/checkin?month=YYYY-MM` 判断 `checked_in_today` / `captcha_enabled`
+2. 若需验证码：`POST /api/user/checkin/captcha` 取图 → 识别/人工输入 → `POST /api/user/checkin` 提交 `captcha_id` + `captcha_answer`
+3. 再查状态确认
+
+**半自动（推荐先用这个）**：终端交互输入（TTY 下默认开启；也可显式指定）：
+
+```powershell
+go run ./cmd/checkin -config config.yaml -only "简直了" -captcha-interactive
+```
+
+会保存验证码图片、尽量用系统看图软件打开，并在终端等待你输入答案。
+
+**全自动（OCR）**：外挂识别命令，stdout 第一行非空文本作为答案：
+
+```powershell
+pip install ddddocr
+go run ./cmd/checkin -config config.yaml -only "简直了" `
+  -captcha-cmd "python scripts/solve_captcha.py {image}"
+```
+
+说明：
+
+- `-captcha-cmd` 中的 `{image}` 会替换为验证码图片路径；没有占位符时路径会作为最后一个参数追加
+- 验证码人工/OCR 等待最多约 5 分钟，不计入 `-timeout` 的 HTTP 超时
+- 无 TTY 的批处理（CI/计划任务）必须提供 `-captcha-cmd`，或不要包含需验证码的站点
+- OCR 准确率取决于验证码样式，失败可回退交互模式
+
+### Cloudflare Turnstile 人机验证（如 cngov.cc.cd）
+
+部分 NewAPI 站在 `POST /api/user/checkin` 上挂了 `TurnstileCheck` 中间件。失败时常见文案：
+
+- `Turnstile token 为空`
+- `Turnstile 校验失败，请刷新重试！`
+
+正确提交方式是 **query 参数**（不是 body 里的 trusted_token）：
+
+```http
+POST /api/user/checkin?turnstile=<TurnstileResponseToken>
+```
+
+`/api/status` 里可看到 `turnstile_check` 与 `turnstile_site_key`（sitekey 绑定域名，**不能**在 localhost 自己渲 widget 骗过）。
+
+**半自动**：TTY 下默认会提示粘贴 token；也可显式：
+
+```powershell
+go run ./cmd/checkin -config config.yaml -only "cngov" -captcha-interactive
+# 或直接传入一次性 token：
+go run ./cmd/checkin -config config.yaml -only "cngov" -turnstile-token "0.xxxx"
+```
+
+浏览器取 token 的大致方式：打开站点 → 登录 → F12 Network → 点签到 → 复制 `checkin?turnstile=` 后面的值（token 很短时效）。
+
+**全自动（打码平台）**：
+
+```powershell
+$env:CAPSOLVER_API_KEY = "你的key"   # 或 TWOCAPTCHA_API_KEY
+go run ./cmd/checkin -config config.yaml -only "cngov" `
+  -turnstile-cmd "python scripts/solve_turnstile.py {sitekey} {url}"
+```
+
+说明：
+
+- 若使用**浏览器已通过人机验证的 session cookie** 登录，gin session 里可能已有 `turnstile` 标记，有时无需再传 token；`access_token` 纯 API 鉴权通常每次都要 token
+- Turnstile 与图片验证码是两条路径，不要混用 `-captcha-cmd` 去解 Turnstile
+
 ### 3. 编译
 
 ```bash
 go build -o newapi-checkin.exe ./cmd/checkin
-./newapi-checkin.exe import -from accounts-backup.json -out config.yaml
+go build -o newapi-import-config.exe ./cmd/import-config
+./newapi-import-config.exe -from accounts-backup.json -out config.yaml
 ./newapi-checkin.exe -config config.yaml
 ```
 
@@ -216,14 +287,15 @@ New-Api-User: <你的用户ID>
 
 ## 实现说明
 
-签到核心逻辑参考 Octopus 的 `internal/sitesync`：
+签到核心逻辑参考 Octopus 的 `internal/sitesync`，并兼容验证码站：
 
 1. 若为账密，先 `POST /api/user/login` 获取明确类型的登录凭证
 2. 按 `credential_type` 生成 Authorization 或 Cookie 请求头
 3. 必要时请求 `GET /api/user/self` 探测用户 ID
-4. 调用 `POST/GET /api/user/checkin`
-5. 签到后请求 `GET /api/user/self` 获取当前总余额
-6. 成功或“已签到”都记为成功
+4. `GET /api/user/checkin` 查状态（已签到 / 是否要验证码）；**不把「查询成功」当签到成功**
+5. 无验证：`POST`（必要时回退 `GET`）`/api/user/checkin`；图片验证码 / Turnstile 分别走对应流程（`?turnstile=`）
+6. 签到后请求 `GET /api/user/self` 获取当前总余额
+7. 成功或“已签到”都记为成功
 
 ## 退出码
 

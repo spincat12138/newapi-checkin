@@ -86,7 +86,15 @@ New-Api-User: <用户数字 ID>
 |------|------|
 | `-config` | Load 路径（签到） |
 | `-log` | 签到日志路径，默认 `checkin.log`，追加写入 |
+| `-captcha-cmd` | 图片验证码识别命令；`{image}` 占位或追加图片路径 |
+| `-captcha-interactive` | 强制终端人工输入（图片验证码 / Turnstile 粘贴） |
+| `-no-captcha-interactive` | 禁用人工输入（批处理需配合 `-captcha-cmd` / `-turnstile-cmd`） |
+| `-captcha-dir` | 验证码图片保存目录 |
+| `-no-open-captcha` | 不自动打开验证码图片 |
+| `-turnstile-token` | 一次性 Cloudflare Turnstile token |
+| `-turnstile-cmd` | 获取 Turnstile token 的命令；`{sitekey}` `{url}` `{base_url}` `{site}` |
+| `-no-open-turnstile-page` | 交互获取 Turnstile 时不自动打开站点 |
 | `-timeout` | 覆盖 `timeout_seconds`（仅运行时，不改文件） |
 | `-only` | 名称子串过滤（逗号分隔，大小写不敏感） |
-| import `-out` | Save 路径 |
-| import `-timeout` | 写入生成配置的 `timeout_seconds` |
+| import-config `-out` | Save 路径 |
+| import-config `-timeout` | 写入生成配置的 `timeout_seconds` |

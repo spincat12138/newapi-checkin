@@ -1,7 +1,11 @@
 # Octopus Accounts 导入
 
 实现：`internal/config/import_octopus.go`
-CLI：`newapi-checkin import ...`
+CLI 入口：`cmd/import-config`（构建产物 `newapi-import-config`）
+
+```powershell
+go run ./cmd/import-config -from accounts-backup.json -out config.yaml
+```
 
 ## 1. 输入格式
 

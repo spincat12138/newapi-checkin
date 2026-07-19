@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>NewAPI Checkin 项目结构图</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="NewAPI Checkin 项目结构图" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;NewAPI Checkin 项目结构图&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(--background) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: light-dark(rgb(255 255 255), rgb(24 24 24));
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 12.5px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;newapi-project-architecture&quot;&gt;
+  &lt;style&gt;
+    #newapi-project-architecture {
+      display: grid;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    #newapi-project-architecture .architecture-map,
+    #newapi-project-architecture .flow-lane,
+    #newapi-project-architecture .detail-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    #newapi-project-architecture .lane-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--foreground);
+    }
+
+    #newapi-project-architecture .flow-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    #newapi-project-architecture .flow-row.is-three {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+
+    #newapi-project-architecture .branch-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    #newapi-project-architecture .branch-path {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    #newapi-project-architecture .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+      pointer-events: none;
+    }
+
+    #newapi-project-architecture .node-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #newapi-project-architecture .detail-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 0.75rem;
+    }
+
+    #newapi-project-architecture .detail-value {
+      margin-top: 0.25rem;
+      overflow-wrap: anywhere;
+    }
+
+    #newapi-project-architecture #architecture-detail-path {
+      overflow-wrap: anywhere;
+    }
+
+    #newapi-project-architecture [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 620px) {
+      #newapi-project-architecture .flow-row,
+      #newapi-project-architecture .flow-row.is-three,
+      #newapi-project-architecture .branch-row,
+      #newapi-project-architecture .branch-path,
+      #newapi-project-architecture .detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      #newapi-project-architecture .connector {
+        transform: rotate(90deg);
+      }
+
+      #newapi-project-architecture .connector.is-vertical {
+        transform: none;
+      }
+    }
+  &lt;/style&gt;
+
+  &lt;div class=&quot;viz-controls&quot; role=&quot;group&quot; aria-label=&quot;选择项目视图&quot;&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-mode=&quot;all&quot; aria-pressed=&quot;true&quot;&gt;全局&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-mode=&quot;checkin&quot; aria-pressed=&quot;false&quot;&gt;签到链&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-mode=&quot;import&quot; aria-pressed=&quot;false&quot;&gt;导入链&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-mode=&quot;verification&quot; aria-pressed=&quot;false&quot;&gt;验证分支&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;architecture-map&quot; role=&quot;group&quot; aria-label=&quot;NewAPI Checkin 项目模块和数据流&quot;&gt;
+    &lt;section class=&quot;flow-lane&quot; data-lane=&quot;checkin&quot;&gt;
+      &lt;div class=&quot;lane-heading&quot;&gt;
+        &lt;i data-lucide=&quot;play&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        &lt;strong&gt;签到执行链&lt;/strong&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;flow-row&quot;&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;checkin-cli&quot; aria-pressed=&quot;true&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;terminal&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;签到 CLI&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;config-load&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;settings&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;加载配置&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;run&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;workflow&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;单站编排&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;checkin-site&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;route&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;动作分流&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;result&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;file-text&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;结果 / 日志&lt;/span&gt;&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;section class=&quot;flow-lane&quot; data-lane=&quot;verification&quot;&gt;
+      &lt;div class=&quot;lane-heading&quot;&gt;
+        &lt;i data-lucide=&quot;shield-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        &lt;strong&gt;签到判定与验证分支&lt;/strong&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;flow-row&quot;&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;status&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;search-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;状态探测&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;plain&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;send&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;普通动作&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;evidence&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;badge-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;动作证据&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;verify&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;refresh-cw&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;状态复核&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;balance&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;wallet&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;查询余额&lt;/span&gt;&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;branch-row&quot;&gt;
+        &lt;div class=&quot;branch-path&quot;&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;captcha&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;image&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;图片验证码&lt;/span&gt;&lt;/button&gt;
+          &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;captcha-solver&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;scan-text&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;人工 / OCR&lt;/span&gt;&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;branch-path&quot;&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;turnstile&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;cloud&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Turnstile&lt;/span&gt;&lt;/button&gt;
+          &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;turnstile-solver&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;key-round&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;token / solver&lt;/span&gt;&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;branch-path&quot;&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;http&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;radio&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;HTTP 边界&lt;/span&gt;&lt;/button&gt;
+          &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+          &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;remote-api&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;server&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;远端 API&lt;/span&gt;&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;section class=&quot;flow-lane&quot; data-lane=&quot;import&quot;&gt;
+      &lt;div class=&quot;lane-heading&quot;&gt;
+        &lt;i data-lucide=&quot;import&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        &lt;strong&gt;配置导入链&lt;/strong&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;flow-row is-three&quot;&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;octopus-json&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;file-json&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;accounts JSON&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;import-cli&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;terminal&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;导入 CLI&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;import-octopus&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;list-filter&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;映射账号&lt;/span&gt;&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;span class=&quot;connector is-vertical&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-down&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+      &lt;div class=&quot;flow-row is-three&quot;&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;normalize&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;circle-check-big&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;统一校验&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;config-save&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;save&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;保存 YAML&lt;/span&gt;&lt;/button&gt;
+        &lt;span class=&quot;connector&quot; aria-hidden=&quot;true&quot;&gt;&lt;i data-lucide=&quot;arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;config-yaml&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;file-cog&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;code&gt;config.yaml&lt;/code&gt;&lt;/span&gt;&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;section class=&quot;flow-lane&quot; data-lane=&quot;support&quot;&gt;
+      &lt;div class=&quot;lane-heading&quot;&gt;
+        &lt;i data-lucide=&quot;layers-3&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        &lt;strong&gt;支撑层&lt;/strong&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;branch-row&quot;&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;tests&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;test-tube-2&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;code&gt;*_test.go&lt;/code&gt;&lt;/span&gt;&lt;/button&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;docs&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;book-open&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;code&gt;README + doc/&lt;/code&gt;&lt;/span&gt;&lt;/button&gt;
+        &lt;button class=&quot;btn btn-block&quot; type=&quot;button&quot; data-node=&quot;docker&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;node-label&quot;&gt;&lt;i data-lucide=&quot;container&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Docker / CI&lt;/span&gt;&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+  &lt;/div&gt;
+
+  &lt;section class=&quot;card&quot; aria-live=&quot;polite&quot; aria-label=&quot;所选模块说明&quot;&gt;
+    &lt;div class=&quot;viz-row&quot;&gt;
+      &lt;code id=&quot;architecture-detail-path&quot;&gt;cmd/checkin/main.go&lt;/code&gt;
+      &lt;span class=&quot;viz-badge&quot; id=&quot;architecture-detail-layer&quot;&gt;进程入口&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;detail-grid&quot;&gt;
+      &lt;div&gt;
+        &lt;span class=&quot;text-small text-muted&quot;&gt;职责&lt;/span&gt;
+        &lt;div class=&quot;detail-value&quot; id=&quot;architecture-detail-role&quot;&gt;解析参数、筛选站点、串行执行并汇总退出码。&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;span class=&quot;text-small text-muted&quot;&gt;关键符号&lt;/span&gt;
+        &lt;div class=&quot;detail-value&quot; id=&quot;architecture-detail-symbols&quot;&gt;&lt;code&gt;runCheckin&lt;/code&gt; · &lt;code&gt;buildCheckinOptions&lt;/code&gt; · &lt;code&gt;openCheckinOutput&lt;/code&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;span class=&quot;text-small text-muted&quot;&gt;核心约束&lt;/span&gt;
+        &lt;div class=&quot;detail-value&quot; id=&quot;architecture-detail-invariant&quot;&gt;单站失败不阻断后续站点；日志写入失败最终返回 exit 1。&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;script&gt;
+    (() =&gt; {
+      const root = document.getElementById(&#x27;newapi-project-architecture&#x27;);
+      const details = {
+        &#x27;checkin-cli&#x27;: [&#x27;cmd/checkin/main.go&#x27;, &#x27;进程入口&#x27;, &#x27;解析参数、筛选站点、串行执行并汇总退出码。&#x27;, &#x27;runCheckin · buildCheckinOptions · openCheckinOutput&#x27;, &#x27;单站失败不阻断后续站点；日志写入失败最终返回 exit 1。&#x27;],
+        &#x27;config-load&#x27;: [&#x27;internal/config/config.go&#x27;, &#x27;配置边界&#x27;, &#x27;读取 YAML，统一默认值、URL 和凭证字段。&#x27;, &#x27;Load · normalize · validateSiteCredential&#x27;, &#x27;一个站点只能使用一种凭证类型；无站点配置直接失败。&#x27;],
+        &#x27;run&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;单站编排&#x27;, &#x27;解析凭证和 user_id，执行签到并补充余额。&#x27;, &#x27;RunWithOptions · login · discoverUserID&#x27;, &#x27;最终成功必须有可信动作证据；余额失败不覆盖签到结果。&#x27;],
+        &#x27;checkin-site&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;兼容状态机&#x27;, &#x27;遍历认证头与 user_id 组合，选择普通、验证码或 Turnstile 路径。&#x27;, &#x27;checkinSite · userIDAttempts&#x27;, &#x27;仅在站点响应明确要求时触发验证分支。&#x27;],
+        &#x27;result&#x27;: [&#x27;internal/checkin/types.go + cmd/checkin/main.go&#x27;, &#x27;输出模型&#x27;, &#x27;记录签到状态、奖励、余额、时间和独立错误。&#x27;, &#x27;Result · printCheckinLog · formatUSD&#x27;, &#x27;nil 金额表示不可用，0 表示真实零值。&#x27;],
+        &#x27;status&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;只读探测&#x27;, &#x27;兼容月度与普通状态接口，归一化多种 JSON 外形。&#x27;, &#x27;fetchCheckinStatus · parseCheckinStatus&#x27;, &#x27;“查询成功”只表示状态读取成功，绝不能当作签到成功。&#x27;],
+        &#x27;plain&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;普通签到&#x27;, &#x27;优先 POST，兼容旧站点 GET 动作端点。&#x27;, &#x27;attemptPlainCheckin&#x27;, &#x27;状态形响应必须留在观察语义；验证错误立即分流。&#x27;],
+        &#x27;evidence&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;成功判定&#x27;, &#x27;从奖励、已签到文案或明确成功文案提取动作证据。&#x27;, &#x27;interpretCheckinActionPayload · isCredibleCheckinSuccess&#x27;, &#x27;success:true 与空消息不足以证明签到已发生。&#x27;],
+        &#x27;verify&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;二次确认&#x27;, &#x27;弱动作响应通过重新查询状态确认。&#x27;, &#x27;verifyCheckedInAfterAction&#x27;, &#x27;存在状态接口且仍为未签到时拒绝假成功。&#x27;],
+        &#x27;balance&#x27;: [&#x27;internal/checkin/checkin.go&#x27;, &#x27;余额补充&#x27;, &#x27;签到后读取 /api/user/self，并将 quota 换算为美元。&#x27;, &#x27;fetchAccountBalance · extractBalanceUSD&#x27;, &#x27;OneAPI 需先扣除 used_quota；查询失败只写 BalanceError。&#x27;],
+        &#x27;captcha&#x27;: [&#x27;internal/checkin/checkin.go + captcha.go&#x27;, &#x27;图片验证&#x27;, &#x27;获取图片、保存、解题并提交 captcha_id 与答案。&#x27;, &#x27;checkinWithCaptcha · parseCaptchaPayload · saveCaptchaImage&#x27;, &#x27;人工/OCR 等待独立于 HTTP 超时，最长约 5 分钟。&#x27;],
+        &#x27;captcha-solver&#x27;: [&#x27;internal/checkin/captcha.go + scripts/solve_captcha.py&#x27;, &#x27;可注入解题器&#x27;, &#x27;支持终端人工输入或外部 OCR 命令。&#x27;, &#x27;InteractiveCaptchaSolver · CommandCaptchaSolver&#x27;, &#x27;外部命令 stdout 第一条非空行才是答案。&#x27;],
+        &#x27;turnstile&#x27;: [&#x27;internal/checkin/turnstile.go&#x27;, &#x27;人机验证&#x27;, &#x27;读取公开 sitekey，将短效 token 放入 checkin 查询参数。&#x27;, &#x27;checkinWithTurnstile · fetchPublicSiteStatus&#x27;, &#x27;Turnstile token 必须绑定真实站点域名，且可能很快过期。&#x27;],
+        &#x27;turnstile-solver&#x27;: [&#x27;internal/checkin/turnstile.go + scripts/solve_turnstile.py&#x27;, &#x27;Token 来源&#x27;, &#x27;支持手工粘贴、一次性参数或第三方 solver 命令。&#x27;, &#x27;InteractiveTurnstileSolver · CommandTurnstileSolver&#x27;, &#x27;图片验证码与 Turnstile 互不替代。&#x27;],
+        &#x27;http&#x27;: [&#x27;internal/checkin/http.go&#x27;, &#x27;传输边界&#x27;, &#x27;统一 JSON、默认头、Origin/Referer、Cloudflare 识别与错误解码。&#x27;, &#x27;doRequest · applyDefaultHeaders · isCloudflareResponse&#x27;, &#x27;请求头优先级：默认 &lt; 派生 &lt; 站点配置 &lt; 本次调用。&#x27;],
+        &#x27;remote-api&#x27;: [&#x27;/api/status · /api/user/self · /api/user/checkin&#x27;, &#x27;远端接口&#x27;, &#x27;提供功能开关、身份/余额、状态和签到动作。&#x27;, &#x27;GET status/self/checkin · POST login/checkin/captcha&#x27;, &#x27;兼容站点响应外形不同，客户端只依赖归一化后的证据。&#x27;],
+        &#x27;octopus-json&#x27;: [&#x27;accounts-backup-*.json&#x27;, &#x27;外部输入&#x27;, &#x27;接受嵌套、扁平对象或裸数组三种备份外形。&#x27;, &#x27;octopusBackup · extractOctopusAccounts&#x27;, &#x27;结构无法识别时整体失败，账号级问题进入 skipped。&#x27;],
+        &#x27;import-cli&#x27;: [&#x27;cmd/import-config/main.go&#x27;, &#x27;导入入口&#x27;, &#x27;解析过滤选项，调用转换并打印 imported/skipped。&#x27;, &#x27;run · printImportSkips&#x27;, &#x27;只有成功生成有效 Config 后才写出 YAML。&#x27;],
+        &#x27;import-octopus&#x27;: [&#x27;internal/config/import_octopus.go&#x27;, &#x27;格式转换&#x27;, &#x27;映射平台、凭证和 user_id，逐账号过滤。&#x27;, &#x27;ImportOctopus · mapOctopusPlatform · resolveOctopusCredential&#x27;, &#x27;单个账号无效不阻断其他账号；全部跳过则失败。&#x27;],
+        &#x27;normalize&#x27;: [&#x27;internal/config/config.go&#x27;, &#x27;统一校验&#x27;, &#x27;清理文本、补默认平台和超时、校验凭证互斥。&#x27;, &#x27;normalize · inferCredentialType&#x27;, &#x27;Load 与 Save 共用同一套规则，避免双重事实来源。&#x27;],
+        &#x27;config-save&#x27;: [&#x27;internal/config/config.go&#x27;, &#x27;持久化&#x27;, &#x27;省略空字段并以 YAML 写出配置。&#x27;, &#x27;Save · buildExportNode&#x27;, &#x27;创建父目录，配置文件权限为 0600。&#x27;],
+        &#x27;config-yaml&#x27;: [&#x27;config.yaml / config.example.yaml&#x27;, &#x27;运行配置&#x27;, &#x27;保存站点、平台、凭证、user_id、自定义头和超时。&#x27;, &#x27;Config · Site&#x27;, &#x27;包含密钥的 config.yaml 必须保持在版本控制之外。&#x27;],
+        &#x27;tests&#x27;: [&#x27;cmd/**/*_test.go + internal/**/*_test.go&#x27;, &#x27;验证层&#x27;, &#x27;覆盖 CLI、配置导入、HTTP 兼容和签到判定。&#x27;, &#x27;go test ./...&#x27;, &#x27;重点防止状态查询假成功、凭证混用与错误退出码回归。&#x27;],
+        &#x27;docs&#x27;: [&#x27;README.md + doc/&#x27;, &#x27;维护文档&#x27;, &#x27;记录配置、导入、签到、测试和架构约定。&#x27;, &#x27;doc/architecture.md · doc/testing.md&#x27;, &#x27;用户操作说明与实现不变量应随代码同步。&#x27;],
+        &#x27;docker&#x27;: [&#x27;Dockerfile + compose.yaml + .github/workflows&#x27;, &#x27;交付层&#x27;, &#x27;构建一次性签到镜像并发布多架构产物。&#x27;, &#x27;docker compose run --rm checkin&#x27;, &#x27;运行时只读挂载配置，日志写入宿主机。&#x27;]
+      };
+
+      const pathEl = root.querySelector(&#x27;#architecture-detail-path&#x27;);
+      const layerEl = root.querySelector(&#x27;#architecture-detail-layer&#x27;);
+      const roleEl = root.querySelector(&#x27;#architecture-detail-role&#x27;);
+      const symbolsEl = root.querySelector(&#x27;#architecture-detail-symbols&#x27;);
+      const invariantEl = root.querySelector(&#x27;#architecture-detail-invariant&#x27;);
+      const moduleButtons = Array.from(root.querySelectorAll(&#x27;[data-node]&#x27;));
+      const modeButtons = Array.from(root.querySelectorAll(&#x27;[data-mode]&#x27;));
+      const lanes = Array.from(root.querySelectorAll(&#x27;[data-lane]&#x27;));
+
+      function renderDetail(key) {
+        const item = details[key];
+        if (!item) return;
+        pathEl.textContent = item[0];
+        layerEl.textContent = item[1];
+        roleEl.textContent = item[2];
+        symbolsEl.textContent = item[3];
+        invariantEl.textContent = item[4];
+        moduleButtons.forEach((button) =&gt; {
+          button.setAttribute(&#x27;aria-pressed&#x27;, String(button.dataset.node === key));
+        });
+      }
+
+      function setMode(mode) {
+        modeButtons.forEach((button) =&gt; {
+          button.setAttribute(&#x27;aria-pressed&#x27;, String(button.dataset.mode === mode));
+        });
+        lanes.forEach((lane) =&gt; {
+          const name = lane.dataset.lane;
+          lane.hidden = mode !== &#x27;all&#x27; &amp;&amp; name !== mode &amp;&amp; !(mode === &#x27;checkin&#x27; &amp;&amp; name === &#x27;verification&#x27;);
+        });
+      }
+
+      moduleButtons.forEach((button) =&gt; {
+        button.addEventListener(&#x27;click&#x27;, () =&gt; renderDetail(button.dataset.node));
+      });
+      modeButtons.forEach((button) =&gt; {
+        button.addEventListener(&#x27;click&#x27;, () =&gt; setMode(button.dataset.mode));
+      });
+    })();
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

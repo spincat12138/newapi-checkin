@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +37,37 @@ func TestOpenCheckinOutputAppendsToLogFile(t *testing.T) {
 	}
 	if got, want := string(content), "first run\nsecond run\n"; got != want {
 		t.Fatalf("unexpected appended log\nwant: %q\n got: %q", want, got)
+	}
+}
+
+func TestRunCheckinRejectsImportSubcommand(t *testing.T) {
+	originalStderr := os.Stderr
+	readEnd, writeEnd, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create stderr pipe: %v", err)
+	}
+	os.Stderr = writeEnd
+	t.Cleanup(func() {
+		os.Stderr = originalStderr
+		readEnd.Close()
+		writeEnd.Close()
+	})
+
+	code := runCheckin([]string{"import", "-from", "accounts-backup.json"})
+	if err := writeEnd.Close(); err != nil {
+		t.Fatalf("close stderr writer: %v", err)
+	}
+	os.Stderr = originalStderr
+
+	output, err := io.ReadAll(readEnd)
+	if err != nil {
+		t.Fatalf("read stderr: %v", err)
+	}
+	if code != 1 {
+		t.Fatalf("exit code=%d want 1", code)
+	}
+	if !strings.Contains(string(output), `unexpected argument "import"`) {
+		t.Fatalf("stderr missing positional argument error: %q", output)
 	}
 }
 

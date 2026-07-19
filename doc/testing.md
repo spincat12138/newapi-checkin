@@ -15,8 +15,9 @@ go test ./internal/config/ -count=1 -v
 | 包 | 文件 | 覆盖点 |
 |----|------|--------|
 | `internal/config` | `config_test.go` / `import_octopus_test.go` | 凭证互斥校验、导入过滤、显式 Cookie 映射、Save/Load 往返 |
-| `internal/checkin` | `checkin_test.go` / `http_test.go` | 显式鉴权头隔离、奖励、总余额、已签到、余额失败、OneAPI 剩余额度 |
+| `internal/checkin` | `checkin_test.go` / `http_test.go` | 显式鉴权头隔离、奖励、总余额、已签到、余额失败、OneAPI 剩余额度、状态查询假成功、图片验证码提交、Turnstile `?turnstile=` |
 | `cmd/checkin` | `main_test.go` | 成功/失败日志格式、未知金额展示、文件追加写入 |
+| `cmd/import-config` | `main_test.go` | 必填输入校验、独立入口生成可加载的 YAML |
 
 签到 HTTP 测试使用本地 `httptest` 服务，不依赖真实站点或密钥。
 
@@ -37,17 +38,17 @@ go test ./internal/config/ -count=1 -v
 ### 导入
 
 ```powershell
-go run ./cmd/checkin import -from <accounts-backup.json> -out config.yaml
+go run ./cmd/import-config -from <accounts-backup.json> -out config.yaml
 # 检查：导入数量、skipped 原因、YAML 可被 Load
 ```
 
 可选回归：
 
 ```powershell
-go run ./cmd/checkin import -from <file> -out t.yaml -include-disabled
-go run ./cmd/checkin import -from <file> -out t.yaml -require-auto-checkin
+go run ./cmd/import-config -from <file> -out t.yaml -include-disabled
+go run ./cmd/import-config -from <file> -out t.yaml -require-auto-checkin
 # 缺 -from 应 exit 1
-go run ./cmd/checkin import
+go run ./cmd/import-config
 ```
 
 ### 签到
@@ -81,13 +82,14 @@ go run ./cmd/checkin -config config.yaml -timeout 60
 | 导入映射/过滤 | `go test ./internal/config/` + 真实 backup 抽测 |
 | Save YAML 形状 | Save 后 `Load` 成功；diff 无多余空字段 |
 | 鉴权/签到判定 | 至少 1 个 token 站 + 1 个“已签到”场景 |
-| CLI 子命令 | `help`、import、默认签到参数解析 |
+| CLI 入口 | `cmd/checkin` 帮助/签到参数，`cmd/import-config` 导入参数 |
 | 文档 | `agent.md` 摘要与 `doc/*` 细节一致 |
 
 ## 4. 构建
 
 ```powershell
 go build -o newapi-checkin.exe ./cmd/checkin
+go build -o newapi-import-config.exe ./cmd/import-config
 ```
 
 `*.exe` 已在 `.gitignore`。

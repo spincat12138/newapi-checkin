@@ -22,12 +22,15 @@
 
 ## 2. 目录结构
 
+交互版本见 [`project-architecture.html`](project-architecture.html)，可按签到链、配置导入链和验证分支筛选，并点击模块查看关键符号与约束。
+
 ```text
 newapi-checkin/
 ├── agent.md                 # Agent 入口（背景/架构/测试）
 ├── README.md                # 用户文档
 ├── doc/                     # 本目录：实现细节
-├── cmd/checkin/main.go      # 进程入口
+├── cmd/checkin/main.go      # 签到进程入口
+├── cmd/import-config/main.go # 配置导入进程入口
 ├── config.example.yaml
 ├── config.yaml              # 本地密钥配置（gitignore）
 ├── go.mod
@@ -40,12 +43,16 @@ newapi-checkin/
 
 ### 3.1 `cmd/checkin`
 
-- 解析子命令：`import` | 默认签到 | `help`
-- **签到模式**：`config.Load` → 按 `-only` 过滤 → 打开追加日志 → 对每个 site `checkin.Run` → 汇总退出码
-- **导入模式**：`config.ImportOctopusFile` → 打印 skipped → `config.Save`
+- `config.Load` → 按 `-only` 过滤 → 打开追加日志 → 对每个 site `checkin.Run` → 汇总退出码
 - 不包含业务 HTTP 细节
 
-### 3.2 `internal/config`
+### 3.2 `cmd/import-config`
+
+- 独立解析外部 Octopus / AionUi accounts 备份
+- `config.ImportOctopusFile` → 打印 skipped → `config.Save`
+- 不依赖签到运行时，可单独构建和执行
+
+### 3.3 `internal/config`
 
 | 符号 | 作用 |
 |------|------|
@@ -57,13 +64,15 @@ newapi-checkin/
 
 无 `net/http` 依赖，便于单测。
 
-### 3.3 `internal/checkin`
+### 3.4 `internal/checkin`
 
 | 符号 | 作用 |
 |------|------|
 | `Run` | 单站签到编排入口，返回 `Result` |
 | `login` | `POST /api/user/login` |
-| `checkinSite` | 尝试多种鉴权头 + POST/GET checkin |
+| `checkinSite` | 状态查询 → 普通签到 / 验证码签到 |
+| captcha helpers | 图片验证码：取图、解码、交互/`-captcha-cmd` 解题、提交 |
+| turnstile helpers | Cloudflare Turnstile：`?turnstile=`、交互粘贴/`-turnstile-cmd` |
 | `discoverUserID` | `GET /api/user/self` |
 | `fetchAccountBalance` | 签到后通过 `GET /api/user/self` 读取当前余额 |
 | `buildAuthHeaderVariants` | 按显式凭证类型生成 Authorization 或 Cookie 请求头 |
@@ -84,7 +93,7 @@ main.runCheckin
        checkin.Run(ctx, site)
          → [username_password] login → token, userID
          → [userID<=0] discoverUserID (optional)
-         → checkinSite: auth variants × userID × POST/GET
+         → checkinSite: auth × userID → GET status → POST/captcha/GET action
          → fetchAccountBalance: GET /api/user/self
          → Result{CheckedAt, Success, RewardUSD, TotalBalanceUSD, Error}
        print per-site result log
@@ -95,7 +104,7 @@ main.runCheckin
 ### 4.2 导入
 
 ```text
-main.runImport
+import-config.run
   → config.ImportOctopusFile(from, opts)
        → json.Unmarshal 多种外形
        → 逐账号过滤/映射 → []Site

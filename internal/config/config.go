@@ -14,12 +14,17 @@ type Config struct {
 	Sites          []Site `yaml:"sites"`
 }
 
+// Credential types are explicit because token and session-cookie values must
+// never be sent through the same HTTP header path.
 const (
 	CredentialAccessToken      = "access_token"
 	CredentialSessionCookie    = "session_cookie"
 	CredentialUsernamePassword = "username_password"
 )
 
+// Site is the normalized runtime description of one remote panel. Exactly one
+// credential family is valid; normalize validates that invariant before the
+// value reaches the check-in package.
 type Site struct {
 	Name           string            `yaml:"name"`
 	BaseURL        string            `yaml:"base_url"`
@@ -33,6 +38,8 @@ type Site struct {
 	Headers        map[string]string `yaml:"headers"`
 }
 
+// Load reads YAML, applies defaults and canonical forms, and rejects ambiguous
+// credentials at the configuration boundary.
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -62,7 +69,7 @@ func Save(path string, cfg *Config) error {
 	node := buildExportNode(cfg)
 	var buf strings.Builder
 	buf.WriteString("# NewAPI / AnyRouter 站点签到配置\n")
-	buf.WriteString("# 可由 `import` 子命令从 Octopus accounts 备份 JSON 生成\n\n")
+	buf.WriteString("# 可由 `newapi-import-config` 从 Octopus accounts 备份 JSON 生成\n\n")
 
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
@@ -86,6 +93,9 @@ func Save(path string, cfg *Config) error {
 	return nil
 }
 
+// normalize is shared by loading, importing, and saving. Keeping defaulting and
+// validation here prevents the CLI and importer from developing different
+// interpretations of a valid site.
 func normalize(cfg *Config) error {
 	if cfg.TimeoutSeconds <= 0 {
 		cfg.TimeoutSeconds = 30
@@ -158,6 +168,9 @@ func buildExportNode(cfg *Config) map[string]any {
 	}
 }
 
+// inferCredentialType preserves the historical shorthand used by hand-written
+// configs while giving session cookies priority over tokens. When neither is
+// present, username/password validation produces the actionable error.
 func inferCredentialType(site *Site) string {
 	switch {
 	case site == nil:
@@ -171,6 +184,8 @@ func inferCredentialType(site *Site) string {
 	}
 }
 
+// validateSiteCredential enforces a single authentication strategy per site.
+// Mixing fields is rejected instead of guessing which secret should win.
 func validateSiteCredential(site *Site) error {
 	if site == nil {
 		return fmt.Errorf("credential is required")
@@ -207,6 +222,9 @@ func validateSiteCredential(site *Site) error {
 	return nil
 }
 
+// validateSessionCookie catches the two most common copy/paste errors without
+// attempting to fully parse Cookie syntax: including the header name and
+// omitting a non-empty name=value pair.
 func validateSessionCookie(value string) error {
 	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(value)), "cookie:") {
 		return fmt.Errorf("session_cookie must contain only the Cookie header value, without the Cookie: prefix")

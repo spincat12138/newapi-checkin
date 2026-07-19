@@ -99,6 +99,9 @@ func ImportOctopus(data []byte, opts OctopusImportOptions) (*ImportResult, error
 		Skipped: make([]string, 0),
 	}
 
+	// Import is intentionally best-effort per account. Structural JSON failures
+	// abort the operation, while unsupported or incomplete accounts are recorded
+	// in Skipped so valid peers can still be exported.
 	for _, acc := range accounts {
 		name := strings.TrimSpace(acc.SiteName)
 		if name == "" {
@@ -214,6 +217,9 @@ func mapOctopusPlatform(siteType string) (string, bool) {
 	}
 }
 
+// resolveOctopusCredential follows the backup's declared auth type when the
+// corresponding value exists, then falls back to the other usable credential.
+// This tolerates older backups whose authType and populated fields disagree.
 func resolveOctopusCredential(acc octopusAccount) (string, string) {
 	authType := strings.ToLower(strings.TrimSpace(acc.AuthType))
 	token := strings.TrimSpace(acc.AccountInfo.AccessToken)
@@ -236,6 +242,9 @@ func resolveOctopusCredential(acc octopusAccount) (string, string) {
 	}
 }
 
+// parseOctopusUserID accepts the loose scalar types produced by encoding/json
+// and older backup exporters. Invalid or non-positive IDs become zero so the
+// runtime can attempt discovery instead of emitting a misleading identifier.
 func parseOctopusUserID(v any) int {
 	switch t := v.(type) {
 	case nil:

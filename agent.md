@@ -18,7 +18,7 @@
 
 ```text
 Octopus/AionUi accounts-backup JSON
-        │  import 子命令
+        │  import-config 独立入口
         ▼
    config.yaml  ──►  checkin 主流程  ──►  各站点 /api/user/checkin
 ```
@@ -29,8 +29,10 @@ Octopus/AionUi accounts-backup JSON
 
 ```text
 cmd/checkin/main.go
-    ├── 默认：runCheckin  → config.Load → checkin.Run(per site)
-    └── import：runImport → config.ImportOctopusFile → config.Save
+    └── runCheckin → config.Load → checkin.Run(per site)
+
+cmd/import-config/main.go
+    └── run → config.ImportOctopusFile → config.Save
 
 internal/config/          # 配置与导入（无网络）
     ├── Config / Site
@@ -46,8 +48,9 @@ internal/checkin/         # 签到（有网络）
 | 包 | 职责 | 依赖 |
 |----|------|------|
 | `cmd/checkin` | CLI 参数、批处理循环、日志追加写入、退出码 | config, checkin |
+| `cmd/import-config` | 外部 accounts JSON 导入参数、结果输出、退出码 | config |
 | `internal/config` | YAML 配置、Octopus JSON 导入 | `gopkg.in/yaml.v3` |
-| `internal/checkin` | HTTP 登录/签到/兼容逻辑 | config |
+| `internal/checkin` | HTTP 登录/签到/验证码/兼容逻辑 | config |
 
 **设计原则**
 
@@ -91,17 +94,26 @@ cd C:\Personal\Code\newapi-checkin
 
 # 编译
 go build -o newapi-checkin.exe ./cmd/checkin
+go build -o newapi-import-config.exe ./cmd/import-config
 
 # 从 Octopus/AionUi 备份导入配置
-.\newapi-checkin.exe import -from accounts-backup.json -out config.yaml
-.\newapi-checkin.exe import -from accounts-backup.json -out config.yaml -include-disabled
-.\newapi-checkin.exe import -from accounts-backup.json -out config.yaml -require-auto-checkin
+.\newapi-import-config.exe -from accounts-backup.json -out config.yaml
+.\newapi-import-config.exe -from accounts-backup.json -out config.yaml -include-disabled
+.\newapi-import-config.exe -from accounts-backup.json -out config.yaml -require-auto-checkin
 
 # 签到
 .\newapi-checkin.exe -config config.yaml
 .\newapi-checkin.exe -config config.yaml -only "关键字1,关键字2"
 .\newapi-checkin.exe -config config.yaml -timeout 60
 .\newapi-checkin.exe -config config.yaml -log logs\checkin.log
+
+# 图片验证码站（半自动 / OCR）
+.\newapi-checkin.exe -config config.yaml -only "简直了" -captcha-interactive
+.\newapi-checkin.exe -config config.yaml -only "简直了" -captcha-cmd "python scripts/solve_captcha.py {image}"
+
+# Turnstile 人机验证站（如 cngov）
+.\newapi-checkin.exe -config config.yaml -only "cngov" -turnstile-token "0.xxx"
+.\newapi-checkin.exe -config config.yaml -only "cngov" -turnstile-cmd "python scripts/solve_turnstile.py {sitekey} {url}"
 
 # 帮助
 .\newapi-checkin.exe help
@@ -139,12 +151,13 @@ go test ./internal/config/ -count=1 -v
 - `quota_awarded` 奖励解析、签到后总余额、OneAPI 剩余额度
 - 已签到奖励为 0、余额未知不伪装成 0、CLI 日志格式与文件追加
 - `access_token` / `session_cookie` 请求头隔离、Cookie 导入映射和混填校验
+- 状态查询（查询成功）不得记为签到成功；验证码流程 + solver 提交
 
 ### 5.2 手工集成（需真实站点与 token）
 
 ```powershell
 # 导入后抽查配置
-go run ./cmd/checkin import -from <backup.json> -out config.yaml
+go run ./cmd/import-config -from <backup.json> -out config.yaml
 
 # 单站冒烟
 go run ./cmd/checkin -config config.yaml -only "某站名关键字"

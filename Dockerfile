@@ -17,6 +17,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -ldflags="-s -w" \
     -o /out/newapi-checkin ./cmd/checkin
 
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath -ldflags="-s -w" \
+    -o /out/newapi-import-config ./cmd/import-config
+
 FROM alpine:3.21
 
 RUN apk add --no-cache ca-certificates tzdata \
@@ -27,6 +31,7 @@ ENV TZ=Asia/Shanghai
 WORKDIR /app
 
 COPY --from=builder /out/newapi-checkin /usr/local/bin/newapi-checkin
+COPY --from=builder /out/newapi-import-config /usr/local/bin/newapi-import-config
 
 ENTRYPOINT ["/usr/local/bin/newapi-checkin"]
 CMD ["-config", "/config/config.yaml", "-log", "/logs/checkin.log"]
