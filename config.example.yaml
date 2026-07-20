@@ -4,6 +4,13 @@
 
 timeout_seconds: 30
 
+# Telegram Bot 通知；启用后在全部站点执行完毕后发送 Markdown 表格
+telegram:
+  enabled: false
+  bot_token: ""
+  chat_id: "" # 私聊、群组或频道 ID，也可填写 @channel_username
+  proxy_url: "" # 可选：http://127.0.0.1:7890 或 socks5://127.0.0.1:1080
+
 sites:
   # 推荐：access_token + user_id
   # 很多 NewAPI 站点强制要求请求头 New-Api-User = 你的用户 ID

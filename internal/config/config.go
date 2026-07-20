@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,8 +11,19 @@ import (
 )
 
 type Config struct {
-	TimeoutSeconds int    `yaml:"timeout_seconds"`
-	Sites          []Site `yaml:"sites"`
+	TimeoutSeconds int            `yaml:"timeout_seconds"`
+	Telegram       TelegramConfig `yaml:"telegram"`
+	Sites          []Site         `yaml:"sites"`
+}
+
+// TelegramConfig controls the optional post-run Telegram Bot notification.
+// ProxyURL is intentionally scoped to Telegram so enabling notifications does
+// not silently reroute site credentials or check-in traffic.
+type TelegramConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	BotToken string `yaml:"bot_token"`
+	ChatID   string `yaml:"chat_id"`
+	ProxyURL string `yaml:"proxy_url"`
 }
 
 // Credential types are explicit because token and session-cookie values must
@@ -105,6 +117,9 @@ func normalize(cfg *Config) error {
 	if cfg.TimeoutSeconds <= 0 {
 		cfg.TimeoutSeconds = 30
 	}
+	if err := normalizeTelegram(&cfg.Telegram); err != nil {
+		return err
+	}
 	if len(cfg.Sites) == 0 {
 		return fmt.Errorf("config has no sites")
 	}
@@ -172,10 +187,59 @@ func buildExportNode(cfg *Config) map[string]any {
 		}
 		sites = append(sites, item)
 	}
-	return map[string]any{
+	root := map[string]any{
 		"timeout_seconds": cfg.TimeoutSeconds,
 		"sites":           sites,
 	}
+	if cfg.Telegram.Enabled || cfg.Telegram.BotToken != "" || cfg.Telegram.ChatID != "" || cfg.Telegram.ProxyURL != "" {
+		telegram := map[string]any{
+			"enabled": cfg.Telegram.Enabled,
+		}
+		if cfg.Telegram.BotToken != "" {
+			telegram["bot_token"] = cfg.Telegram.BotToken
+		}
+		if cfg.Telegram.ChatID != "" {
+			telegram["chat_id"] = cfg.Telegram.ChatID
+		}
+		if cfg.Telegram.ProxyURL != "" {
+			telegram["proxy_url"] = cfg.Telegram.ProxyURL
+		}
+		root["telegram"] = telegram
+	}
+	return root
+}
+
+func normalizeTelegram(telegram *TelegramConfig) error {
+	if telegram == nil {
+		return nil
+	}
+
+	telegram.BotToken = strings.TrimSpace(telegram.BotToken)
+	telegram.ChatID = strings.TrimSpace(telegram.ChatID)
+	telegram.ProxyURL = strings.TrimSpace(telegram.ProxyURL)
+
+	if telegram.ProxyURL != "" {
+		parsed, err := url.Parse(telegram.ProxyURL)
+		if err != nil || parsed.Host == "" {
+			return fmt.Errorf("telegram.proxy_url must be an absolute proxy URL")
+		}
+		switch strings.ToLower(parsed.Scheme) {
+		case "http", "https", "socks5", "socks5h":
+		default:
+			return fmt.Errorf("telegram.proxy_url must use http, https, socks5, or socks5h")
+		}
+	}
+
+	if !telegram.Enabled {
+		return nil
+	}
+	if telegram.BotToken == "" {
+		return fmt.Errorf("telegram.bot_token is required when telegram.enabled is true")
+	}
+	if telegram.ChatID == "" {
+		return fmt.Errorf("telegram.chat_id is required when telegram.enabled is true")
+	}
+	return nil
 }
 
 func normalizeAdditionalVerification(value string) (string, error) {

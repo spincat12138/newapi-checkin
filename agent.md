@@ -34,6 +34,9 @@ internal/checkin/         # 签到（有网络）
     ├── Run               # 单站入口
     ├── login / checkinSite / discoverUserID / fetchAccountBalance
     └── http helpers      # 显式鉴权类型、New-Api-User、JSON 解析
+
+internal/notification/    # Telegram Bot 通知、Markdown 表格和代理
+internal/report/          # CLI / 通知共享金额格式
 ```
 
 | 包 | 职责 | 依赖 |
@@ -42,11 +45,14 @@ internal/checkin/         # 签到（有网络）
 | `cmd/import-config` | 外部 accounts JSON 导入参数、结果输出、退出码 | config |
 | `internal/config` | YAML 配置、Octopus JSON 导入 | `gopkg.in/yaml.v3` |
 | `internal/checkin` | HTTP 登录/签到/验证码/兼容逻辑 | config |
+| `internal/notification` | Telegram 表格生成、分片与 Bot API 请求 | config, checkin, report |
+| `internal/report` | 共享结果展示格式 | 标准库 |
 
 **设计原则**
 
 - 配置与网络逻辑分离：导入可单测、无需外网。
 - 签到按显式凭证类型选择 Authorization 或 Cookie，并兼容已签到中英文文案。
+- Telegram 通知使用独立代理配置，不改变站点签到网络路径。
 - 密钥仅落在 `config.yaml`（已 gitignore）。
 
 详细模块说明与请求约定见：
@@ -125,7 +131,7 @@ go test ./...
 go test ./internal/config/ -count=1 -v
 ```
 
-关键用例：`internal/config/import_octopus_test.go`、`internal/checkin/checkin_test.go`、`cmd/checkin/main_test.go`
+关键用例：`internal/config/import_octopus_test.go`、`internal/checkin/checkin_test.go`、`internal/notification/telegram_test.go`、`cmd/checkin/main_test.go`
 
 - 默认过滤 disabled / 无凭证 / 不支持平台
 - cookie 鉴权、`unknown` → `new-api-like`
@@ -135,6 +141,7 @@ go test ./internal/config/ -count=1 -v
 - 已签到奖励为 0、余额未知不伪装成 0、CLI 日志格式与文件追加
 - `access_token` / `session_cookie` 请求头隔离、Cookie 导入映射和混填校验
 - 状态查询（查询成功）不得记为签到成功；验证码流程 + solver 提交
+- Telegram Markdown 表格、失败备注、消息分片、代理与 Bot Token 脱敏
 
 ### 5.2 手工集成（需真实站点与 token）
 

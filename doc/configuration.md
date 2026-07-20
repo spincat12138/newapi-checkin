@@ -13,6 +13,12 @@
 ```yaml
 timeout_seconds: 30          # 单站 context 超时（秒），<=0 时 Load 归一为 30
 
+telegram:
+  enabled: true              # 默认 false
+  bot_token: "123456:..."    # enabled=true 时必填
+  chat_id: "-1001234567890" # enabled=true 时必填，也支持 @channel_username
+  proxy_url: "http://127.0.0.1:7890" # 可选，仅代理 Telegram API
+
 sites:
   - name: "展示名"
     base_url: "https://example.com"   # 必填，Load 时去尾部 /
@@ -51,6 +57,17 @@ sites:
 
 三种凭证字段不可混填。空 `credential_type` 时按 `session_cookie`、`access_token`、`username_password` 的字段存在性推断；显式填写更清晰。
 
+### telegram
+
+| 字段 | 行为 |
+|------|------|
+| `enabled` | `true` 时在整批签到完成后发送通知；默认 `false` |
+| `bot_token` | BotFather 提供的令牌；启用时必填 |
+| `chat_id` | 私聊、群组、频道 ID 或 `@channel_username`；启用时必填 |
+| `proxy_url` | 可选绝对 URL，支持 `http`、`https`、`socks5`、`socks5h` |
+
+`proxy_url` 是 Telegram 通知的网络边界，不会传递给站点签到请求。留空时 Telegram HTTP 客户端使用标准的 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` 环境变量。配置值会在 `Load` 时 trim；即使通知关闭，只要填写了代理 URL，也会校验格式和协议。
+
 ### additional_verification
 
 | 值 | 行为 |
@@ -68,6 +85,7 @@ sites:
    - trim 字符串、`base_url` 去尾 `/`
    - platform / credential_type 小写
    - additional_verification 大小写不敏感输入，归一为 `none` / `CAPTCHA` / `Turnstile`
+   - trim Telegram token、chat ID、代理；启用时校验必填字段和代理协议
    - 空 name → `site-N`
    - 校验凭证类型、对应字段和字段互斥关系
 3. `sites` 为空 → error
@@ -75,7 +93,7 @@ sites:
 ## 4. Save 行为
 
 - 写入文件头注释（说明可由 import 生成）
-- 通过 `buildExportNode` 省略空可选字段（无 user_id 不写 0、无 headers 不写）
+- 通过 `buildExportNode` 省略空可选字段（无 user_id 不写 0、无 headers 不写、Telegram 全空且关闭时不写）
 - 父目录不存在则创建
 - 文件模式 `0o600`
 

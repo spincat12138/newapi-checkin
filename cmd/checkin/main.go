@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"newapi-checkin/internal/checkin"
 	"newapi-checkin/internal/config"
+	"newapi-checkin/internal/notification"
+	"newapi-checkin/internal/report"
 )
 
 const defaultLogPath = "checkin.log"
@@ -111,6 +112,7 @@ func runCheckin(args []string) int {
 
 	successCount := 0
 	failCount := 0
+	results := make([]checkin.Result, 0, len(sites))
 
 	for i, site := range sites {
 		fmt.Fprintf(output, "[%d/%d] %s (%s)\n", i+1, len(sites), site.Name, site.BaseURL)
@@ -118,6 +120,7 @@ func runCheckin(args []string) int {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 		result := checkin.RunWithOptions(ctx, site, opts)
 		cancel()
+		results = append(results, result)
 
 		if result.Success {
 			successCount++
@@ -134,6 +137,17 @@ func runCheckin(args []string) int {
 
 	fmt.Fprintln(output, strings.Repeat("-", 48))
 	fmt.Fprintf(output, "done: success=%d fail=%d\n", successCount, failCount)
+	if cfg.Telegram.Enabled {
+		fmt.Fprintf(output, "Telegram 通知: 开始发送，结果数=%d\n", len(results))
+		if err := notification.SendTelegram(context.Background(), cfg.Telegram, results); err != nil {
+			fmt.Fprintf(output, "Telegram 通知: 发送失败: %v\n", err)
+			if closeErr := closeLog(); closeErr != nil {
+				fmt.Fprintf(os.Stderr, "write check-in log failed: %v\n", closeErr)
+			}
+			return 1
+		}
+		fmt.Fprintf(output, "Telegram 通知: 发送成功，结果数=%d\n", len(results))
+	}
 	if err := closeLog(); err != nil {
 		fmt.Fprintf(os.Stderr, "write check-in log failed: %v\n", err)
 		return 1
@@ -204,26 +218,9 @@ func printCheckinLog(w io.Writer, result checkin.Result) {
 		result.CheckedAt.Format("2006-01-02 15:04:05"),
 		result.Site,
 		success,
-		formatUSD(result.RewardUSD),
-		formatUSD(result.TotalBalanceUSD),
+		report.FormatUSD(result.RewardUSD),
+		report.FormatUSD(result.TotalBalanceUSD),
 	)
-}
-
-// formatUSD keeps unavailable values distinct from a real zero balance while
-// avoiding noisy trailing fractional zeros.
-func formatUSD(value *float64) string {
-	if value == nil {
-		return "不可用"
-	}
-
-	formatted := strconv.FormatFloat(*value, 'f', 6, 64)
-	formatted = strings.TrimRight(strings.TrimRight(formatted, "0"), ".")
-	if !strings.Contains(formatted, ".") {
-		formatted += ".00"
-	} else if len(formatted)-strings.LastIndex(formatted, ".") == 2 {
-		formatted += "0"
-	}
-	return "$" + formatted
 }
 
 // parseOnly normalizes the comma-separated filter once; matchOnly can then use

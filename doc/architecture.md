@@ -36,7 +36,9 @@ newapi-checkin/
 ├── go.mod
 └── internal/
     ├── config/              # 配置 + 导入
-    └── checkin/             # 签到运行时
+    ├── checkin/             # 签到运行时
+    ├── notification/        # Telegram 表格与 Bot API 发送
+    └── report/              # CLI / 通知共享金额格式
 ```
 
 ## 3. 模块职责
@@ -81,6 +83,13 @@ newapi-checkin/
 
 平台常量见 `types.go`（`supportsCheckin`）。
 
+### 3.5 `internal/notification` / `internal/report`
+
+- `report.FormatUSD` 是控制台日志与 Telegram 表格共用的金额格式事实来源。
+- `notification.SendTelegram` 在整批签到结束后发送 MarkdownV2 预格式化表格，并按 Telegram 4096 字符限制自动分片。
+- Telegram 专用 `proxy_url` 在独立 `http.Transport` 上生效，不修改签到包的 HTTP 客户端。
+- 网络错误会剥离请求 URL，避免 Bot Token 随错误信息写入日志。
+
 ## 4. 运行时数据流
 
 ### 4.1 签到
@@ -99,7 +108,9 @@ main.runCheckin
          → Result{CheckedAt, Success, RewardUSD, TotalBalanceUSD, Error}
        print per-site result log
        tee console output → append checkin.log
-  → exit 0 / 2
+  → [telegram.enabled] notification.SendTelegram(results)
+       → Markdown table → split by 4096 runes → Bot API via optional proxy
+  → exit 0 / 1 / 2
 ```
 
 ### 4.2 导入

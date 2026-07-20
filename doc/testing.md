@@ -16,6 +16,8 @@ go test ./internal/config/ -count=1 -v
 |----|------|--------|
 | `internal/config` | `config_test.go` / `import_octopus_test.go` | 凭证互斥校验、导入过滤、显式 Cookie 映射、Save/Load 往返 |
 | `internal/checkin` | `checkin_test.go` / `http_test.go` / `twocaptcha_test.go` | 鉴权、奖励、余额、状态判定、验证码提交、Turnstile、2Captcha 创建任务/轮询/错误 |
+| `internal/notification` | `telegram_test.go` | Markdown 表格、失败备注、消息分片、代理、API 错误、Bot Token 脱敏 |
+| `internal/report` | `format_test.go` | CLI / Telegram 共用金额格式 |
 | `cmd/checkin` | `main_test.go` | 成功/失败日志格式、未知金额展示、文件追加写入 |
 | `cmd/import-config` | `main_test.go` | 必填输入校验、独立入口生成可加载的 YAML |
 
@@ -75,6 +77,7 @@ go run ./cmd/checkin -config config.yaml -timeout 60
 - token 失效时 FAIL 信息是否清晰
 - 日志是否包含站点、签到时间、成功状态、本次奖励与总余额
 - 连续运行两次后日志是否保留前一次内容并继续追加
+- Telegram 表格是否包含全部站点、失败原因和余额；代理不可用时是否明确失败且不泄露 Bot Token
 
 ## 3. 变更回归清单
 
@@ -83,6 +86,7 @@ go run ./cmd/checkin -config config.yaml -timeout 60
 | 导入映射/过滤 | `go test ./internal/config/` + 真实 backup 抽测 |
 | Save YAML 形状 | Save 后 `Load` 成功；diff 无多余空字段 |
 | 鉴权/签到判定 | 至少 1 个 token 站 + 1 个“已签到”场景 |
+| Telegram 通知 | `go test ./internal/notification/` + 测试群/私聊实发一条 |
 | CLI 入口 | `cmd/checkin` 帮助/签到参数，`cmd/import-config` 导入参数 |
 | 文档 | `agent.md` 摘要与 `doc/*` 细节一致 |
 

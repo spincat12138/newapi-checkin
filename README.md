@@ -31,6 +31,8 @@
 - 识别“今日已签到”为成功
 - 输出每个站点的签到时间、成功状态、本次奖励和签到后总余额
 - 支持多站点批量签到
+- 支持通过 Telegram Bot 发送 Markdown 表格通知
+- Telegram 请求可单独配置 HTTP / HTTPS / SOCKS5 代理
 
 ## 快速开始
 
@@ -78,6 +80,11 @@ copy config.example.yaml config.yaml
 
 ```yaml
 timeout_seconds: 30
+telegram:
+  enabled: false
+  bot_token: ""
+  chat_id: ""
+  proxy_url: ""
 sites:
   - name: "我的站点"
     base_url: "https://example.com"
@@ -147,6 +154,29 @@ go run ./cmd/checkin -config config.yaml -log logs/checkin.log
 ```
 
 控制台中的站点明细、结果日志、余额查询错误和最终汇总会原样追加到日志文件。金额按 NewAPI 的 `500000 quota = $1` 换算。站点未返回奖励或余额接口不可用时显示 `不可用`，并额外打印余额查询错误。
+
+### Telegram Bot 通知
+
+在 `config.yaml` 中配置根级 `telegram`：
+
+```yaml
+telegram:
+  enabled: true
+  bot_token: "123456:替换为 BotFather 提供的 Token"
+  chat_id: "-1001234567890"
+  proxy_url: "http://127.0.0.1:7890" # 可留空；也支持 https、socks5、socks5h
+```
+
+`proxy_url` 只用于 Telegram API，不会改变站点签到请求的网络路径；留空时使用 `HTTP_PROXY`、`HTTPS_PROXY`、`NO_PROXY` 等系统代理环境变量。全部站点执行完成后，程序发送以下列的 Markdown 表格：
+
+```text
+| 站点 | 是否签到成功 | 本次签到余额 | 历史总余额 | 备注 |
+| --- | --- | --- | --- | --- |
+| 我的站点 | 是 | $0.005 | $2.50 | - |
+| 失败站点 | 否 | 不可用 | 不可用 | 请求超时 |
+```
+
+Telegram 不原生渲染表格语法，因此消息使用 MarkdownV2 预格式化代码块发送，以完整保留表格行列。结果过长时会自动拆成多条消息。发送开始、成功或失败状态都会写入控制台和签到日志；通知失败时返回退出码 `1`，Bot Token 不会出现在错误日志中。
 
 ### 图片验证码签到（如「简直了」jianzhile.vip）
 
@@ -249,6 +279,10 @@ docker compose run --rm --no-build checkin
 | 字段 | 说明 |
 |------|------|
 | `timeout_seconds` | 单站请求超时秒数，默认 30 |
+| `telegram.enabled` | 是否发送 Telegram Bot 通知，默认 `false` |
+| `telegram.bot_token` | BotFather 提供的 Bot Token；启用通知时必填 |
+| `telegram.chat_id` | 接收通知的私聊、群组、频道 ID 或 `@channel_username`；启用通知时必填 |
+| `telegram.proxy_url` | Telegram API 专用代理；支持 `http`、`https`、`socks5`、`socks5h` |
 | `sites[].name` | 站点名称（展示用） |
 | `sites[].base_url` | 站点根地址，如 `https://xxx.com` |
 | `sites[].platform` | 平台类型，见上文 |
@@ -296,5 +330,5 @@ New-Api-User: <你的用户ID>
 ## 退出码
 
 - `0`：全部成功
-- `1`：配置/参数错误
+- `1`：配置/参数、日志或 Telegram 通知错误
 - `2`：存在签到失败站点
