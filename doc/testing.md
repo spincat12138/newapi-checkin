@@ -15,7 +15,7 @@ go test ./internal/config/ -count=1 -v
 | 包 | 文件 | 覆盖点 |
 |----|------|--------|
 | `internal/config` | `config_test.go` / `import_octopus_test.go` | 凭证互斥校验、导入过滤、显式 Cookie 映射、Save/Load 往返 |
-| `internal/checkin` | `checkin_test.go` / `http_test.go` | 显式鉴权头隔离、奖励、总余额、已签到、余额失败、OneAPI 剩余额度、状态查询假成功、图片验证码提交、Turnstile `?turnstile=` |
+| `internal/checkin` | `checkin_test.go` / `http_test.go` / `twocaptcha_test.go` | 鉴权、奖励、余额、状态判定、验证码提交、Turnstile、2Captcha 创建任务/轮询/错误 |
 | `cmd/checkin` | `main_test.go` | 成功/失败日志格式、未知金额展示、文件追加写入 |
 | `cmd/import-config` | `main_test.go` | 必填输入校验、独立入口生成可加载的 YAML |
 
@@ -61,6 +61,7 @@ go run ./cmd/checkin -config not-exist.yaml
 go run ./cmd/checkin -config config.yaml -only "__no_such_site__"
 
 # 单站冒烟
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key"
 go run ./cmd/checkin -config config.yaml -only "已知站名关键字" -timeout 60
 
 # 全量（耗时、依赖外网）

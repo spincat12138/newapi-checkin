@@ -1,5 +1,6 @@
 # NewAPI / AnyRouter 站点签到配置
 # 复制为 config.yaml 后填写真实信息
+# CAPTCHA / Turnstile 站点还需设置环境变量 TWOCAPTCHA_API_KEY
 
 timeout_seconds: 30
 
@@ -11,6 +12,7 @@ sites:
     platform: "new-api" # new-api | any-router | one-api | veloera | done-hub | new-api-like
     credential_type: "access_token"
     access_token: "你的 access_token"
+    additional_verification: none # none | CAPTCHA | Turnstile
     # 必填（多数 NewAPI 站点）：用户 ID
     # 获取方式：浏览器登录后 F12 → Network → 点开 /api/user/self 等请求 → Request Headers 里的 New-Api-User
     user_id: 1
@@ -25,6 +27,7 @@ sites:
     credential_type: "session_cookie"
     session_cookie: "session=你的会话值"
     user_id: 2
+    additional_verification: none
 
   # 备选：用户名密码（登录成功后通常能拿到 user id）
   - name: "示例站点-账密"
@@ -33,3 +36,4 @@ sites:
     credential_type: "username_password"
     username: "your_username"
     password: "your_password"
+    additional_verification: none

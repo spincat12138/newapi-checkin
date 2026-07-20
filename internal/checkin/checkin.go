@@ -16,9 +16,9 @@ import (
 // NewAPI stores quota in internal units rather than dollars.
 const quotaPerUSD = 500000.0
 
-// captchaSolveTimeout bounds how long we wait for human/OCR captcha input.
-// HTTP request timeouts come from the caller context separately.
-const captchaSolveTimeout = 5 * time.Minute
+// verificationSolveTimeout bounds 2Captcha task creation and polling. HTTP
+// request timeouts for the target site come from the caller context separately.
+const verificationSolveTimeout = 5 * time.Minute
 
 // Run performs check-in for a single site configuration with default options.
 func Run(ctx context.Context, site config.Site) Result {
@@ -223,24 +223,25 @@ func extractLoginCredential(payload map[string]any) authCredential {
 }
 
 // checkinSite is the compatibility state machine. For each accepted auth header
-// and optional user-ID variant it prefers a read-only status probe, then chooses
-// the required action path. Validation challenges are attempted only after
-// explicit configuration or an API response proves they are required.
+// and optional user-ID variant it prefers a read-only status probe, then follows
+// the site's explicit additional_verification setting. The configuration is the
+// single source of truth so global status flags cannot misclassify normal sites.
 func checkinSite(ctx context.Context, site config.Site, credential authCredential, userID int, opts Options) (*checkinOK, int, error) {
 	authVariants := buildAuthHeaderVariants(credential)
 	if len(authVariants) == 0 {
 		return nil, 0, fmt.Errorf("credential is required")
 	}
 
-	// Public status helps classify failures (disabled vs turnstile) without forcing CF token.
+	// Public status is only used to reject sites whose check-in feature is disabled.
 	pub, _ := fetchPublicSiteStatus(ctx, site)
 	if pub != nil && pub.CheckinEnabled != nil && !*pub.CheckinEnabled {
 		return nil, 0, fmt.Errorf("该站点未开启签到功能（/api/status checkin_enabled=false）")
 	}
 
-	// Only force Turnstile *before* plain POST when the user already supplied a token.
-	// Having SolveTurnstile configured must NOT prompt every site for CF token.
-	hasExplicitTurnstileToken := strings.TrimSpace(opts.TurnstileToken) != ""
+	additionalVerification := site.AdditionalVerification
+	if additionalVerification == "" {
+		additionalVerification = config.AdditionalVerificationNone
+	}
 
 	userIDs := userIDAttempts(userID)
 	var lastErr error
@@ -261,14 +262,6 @@ func checkinSite(ctx context.Context, site config.Site, credential authCredentia
 				if status.CheckedInToday || isAlreadyCheckedInMessage(status.Message) {
 					return &checkinOK{Message: firstNonEmptyString(status.Message, "今日已签到"), Reward: ""}, uid, nil
 				}
-				if status.CaptchaEnabled {
-					ok, err := checkinWithCaptcha(ctx, site, headers, opts)
-					if err != nil {
-						lastErr = err
-						continue
-					}
-					return ok, uid, nil
-				}
 			} else if statusErr != nil {
 				if looksLikeCheckinDisabled(statusErr.Error()) {
 					return nil, 0, fmt.Errorf("该站点未开启签到功能：%s", statusErr.Error())
@@ -276,38 +269,65 @@ func checkinSite(ctx context.Context, site config.Site, credential authCredentia
 				lastErr = statusErr
 			}
 
-			// 2) Explicit -turnstile-token only: try Turnstile POST first.
-			if hasExplicitTurnstileToken {
-				ok, err := checkinWithTurnstile(ctx, site, headers, opts)
-				if err == nil {
-					return ok, uid, nil
+			// 2) Execute exactly the configured verification path.
+			switch additionalVerification {
+			case config.AdditionalVerificationCaptcha:
+				ok, err := checkinWithCaptcha(ctx, site, headers, opts)
+				if err != nil {
+					lastErr = err
+					continue
 				}
-				lastErr = err
+				return ok, uid, nil
+			case config.AdditionalVerificationTurnstile:
+				// A session cookie may already carry the server-side Turnstile marker.
+				// Try the ordinary action first and pay for 2Captcha only when required.
+				plainOK, plainErr := attemptPlainCheckin(ctx, site, headers)
+				if plainErr == nil {
+					return plainOK, uid, nil
+				}
+				if looksLikeCheckinDisabled(plainErr.Error()) {
+					return nil, 0, fmt.Errorf("该站点未开启签到功能：%s", plainErr.Error())
+				}
+				if !looksLikeTurnstileRequired(plainErr.Error()) {
+					lastErr = plainErr
+					continue
+				}
+				ok, err := checkinWithTurnstile(ctx, site, headers, opts)
+				if err != nil {
+					lastErr = err
+					continue
+				}
+				return ok, uid, nil
+			case config.AdditionalVerificationNone:
+				// Continue with the ordinary POST/GET compatibility flow below.
+			default:
+				return nil, 0, fmt.Errorf("unsupported additional_verification %q", additionalVerification)
 			}
 
-			// 3) Plain check-in (normal sites; session may already pass Turnstile).
+			// 3) Plain check-in for additional_verification=none.
 			ok, err := attemptPlainCheckin(ctx, site, headers)
 			if err != nil {
 				lastErr = err
 				if looksLikeCheckinDisabled(err.Error()) {
 					return nil, 0, fmt.Errorf("该站点未开启签到功能：%s", err.Error())
 				}
-				// Turnstile only after the site actually asks for it (or public flag + token empty).
 				if looksLikeTurnstileRequired(err.Error()) {
-					turnstileOK, turnstileErr := checkinWithTurnstile(ctx, site, headers, opts)
-					if turnstileErr != nil {
-						lastErr = turnstileErr
-						continue
-					}
-					return turnstileOK, uid, nil
+					lastErr = fmt.Errorf(
+						"站点返回 Turnstile 验证要求，但 additional_verification=%q；请确认站点实际要求后改为 %q：%s",
+						config.AdditionalVerificationNone,
+						config.AdditionalVerificationTurnstile,
+						err,
+					)
+					continue
 				}
 				if looksLikeCaptchaRequired(err.Error()) {
-					captchaOK, captchaErr := checkinWithCaptcha(ctx, site, headers, opts)
-					if captchaErr != nil {
-						lastErr = captchaErr
-						continue
-					}
-					return captchaOK, uid, nil
+					lastErr = fmt.Errorf(
+						"站点返回图片验证码要求，但 additional_verification=%q；请确认站点实际要求后改为 %q：%s",
+						config.AdditionalVerificationNone,
+						config.AdditionalVerificationCaptcha,
+						err,
+					)
+					continue
 				}
 				continue
 			}
@@ -377,12 +397,11 @@ func attemptPlainCheckin(ctx context.Context, site config.Site, headers map[stri
 }
 
 // checkinWithCaptcha performs the three-step image challenge protocol: fetch
-// challenge, solve it through the injected callback, then submit ID and answer.
-// Human/OCR waiting receives its own timeout so the caller's short HTTP deadline
-// does not expire while an operator is reading the image.
+// the image, solve it through 2Captcha, then submit the challenge ID and answer.
+// External task polling receives its own timeout independent of site HTTP calls.
 func checkinWithCaptcha(ctx context.Context, site config.Site, headers map[string]string, opts Options) (*checkinOK, error) {
 	if opts.SolveCaptcha == nil {
-		return nil, fmt.Errorf("该站点开启了签到验证码，请使用交互模式或 -captcha-cmd 提供识别命令（见 README 验证码签到）")
+		return nil, fmt.Errorf("图片验证码需要 2Captcha，请设置 TWOCAPTCHA_API_KEY")
 	}
 
 	// Captcha fetch uses the already-selected auth headers.
@@ -398,12 +417,7 @@ func checkinWithCaptcha(ctx context.Context, site config.Site, headers map[strin
 		return nil, err
 	}
 
-	imagePath, err := saveCaptchaImage(opts.CaptchaImageDir, site.Name, captcha.ID, captcha.Image, captcha.MimeType)
-	if err != nil {
-		return nil, fmt.Errorf("save captcha image: %w", err)
-	}
-
-	solveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), captchaSolveTimeout)
+	solveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), verificationSolveTimeout)
 	defer cancel()
 
 	answer, err := opts.SolveCaptcha(solveCtx, CaptchaChallenge{
@@ -411,10 +425,9 @@ func checkinWithCaptcha(ctx context.Context, site config.Site, headers map[strin
 		CaptchaID: captcha.ID,
 		Image:     captcha.Image,
 		MimeType:  captcha.MimeType,
-		ImagePath: imagePath,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("solve captcha: %w", err)
+		return nil, fmt.Errorf("solve captcha with 2captcha: %w", err)
 	}
 	answer = strings.TrimSpace(answer)
 	if answer == "" {

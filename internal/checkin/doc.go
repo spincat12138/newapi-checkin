@@ -5,8 +5,8 @@
 // RunWithOptions resolves credentials and user identity, checkinSite selects
 // the compatible status/action path, and doRequest owns HTTP normalization and
 // response decoding. Captcha and Turnstile solvers are injected through
-// Options so interactive CLI behavior and unattended automation share the same
-// business flow.
+// Options for deterministic tests; the CLI wires both paths exclusively to
+// the native 2Captcha client.
 //
 // A central safety rule is that a successful status query is not a successful
 // check-in action. Action responses must contain reward evidence, an explicit

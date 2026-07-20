@@ -71,8 +71,9 @@ newapi-checkin/
 | `Run` | 单站签到编排入口，返回 `Result` |
 | `login` | `POST /api/user/login` |
 | `checkinSite` | 状态查询 → 普通签到 / 验证码签到 |
-| captcha helpers | 图片验证码：取图、解码、交互/`-captcha-cmd` 解题、提交 |
-| turnstile helpers | Cloudflare Turnstile：`?turnstile=`、交互粘贴/`-turnstile-cmd` |
+| captcha helpers | 图片验证码：取图、解码、2Captcha `ImageToTextTask`、提交 |
+| turnstile helpers | Cloudflare Turnstile：2Captcha `TurnstileTaskProxyless`、`?turnstile=` 提交 |
+| twocaptcha client | 原生 JSON API：创建任务、轮询结果、统一错误处理 |
 | `discoverUserID` | `GET /api/user/self` |
 | `fetchAccountBalance` | 签到后通过 `GET /api/user/self` 读取当前余额 |
 | `buildAuthHeaderVariants` | 按显式凭证类型生成 Authorization 或 Cookie 请求头 |

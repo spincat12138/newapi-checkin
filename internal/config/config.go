@@ -20,22 +20,27 @@ const (
 	CredentialAccessToken      = "access_token"
 	CredentialSessionCookie    = "session_cookie"
 	CredentialUsernamePassword = "username_password"
+
+	AdditionalVerificationNone      = "none"
+	AdditionalVerificationCaptcha   = "CAPTCHA"
+	AdditionalVerificationTurnstile = "Turnstile"
 )
 
 // Site is the normalized runtime description of one remote panel. Exactly one
 // credential family is valid; normalize validates that invariant before the
 // value reaches the check-in package.
 type Site struct {
-	Name           string            `yaml:"name"`
-	BaseURL        string            `yaml:"base_url"`
-	Platform       string            `yaml:"platform"`
-	CredentialType string            `yaml:"credential_type"`
-	AccessToken    string            `yaml:"access_token"`
-	SessionCookie  string            `yaml:"session_cookie"`
-	Username       string            `yaml:"username"`
-	Password       string            `yaml:"password"`
-	UserID         int               `yaml:"user_id"`
-	Headers        map[string]string `yaml:"headers"`
+	Name                   string            `yaml:"name"`
+	BaseURL                string            `yaml:"base_url"`
+	Platform               string            `yaml:"platform"`
+	CredentialType         string            `yaml:"credential_type"`
+	AccessToken            string            `yaml:"access_token"`
+	SessionCookie          string            `yaml:"session_cookie"`
+	Username               string            `yaml:"username"`
+	Password               string            `yaml:"password"`
+	UserID                 int               `yaml:"user_id"`
+	AdditionalVerification string            `yaml:"additional_verification"`
+	Headers                map[string]string `yaml:"headers"`
 }
 
 // Load reads YAML, applies defaults and canonical forms, and rejects ambiguous
@@ -114,10 +119,14 @@ func normalize(cfg *Config) error {
 		site.SessionCookie = strings.TrimSpace(site.SessionCookie)
 		site.Username = strings.TrimSpace(site.Username)
 		site.Password = strings.TrimSpace(site.Password)
-
 		if site.Name == "" {
 			site.Name = fmt.Sprintf("site-%d", i+1)
 		}
+		additionalVerification, err := normalizeAdditionalVerification(site.AdditionalVerification)
+		if err != nil {
+			return fmt.Errorf("site %q: %w", site.Name, err)
+		}
+		site.AdditionalVerification = additionalVerification
 		if site.BaseURL == "" {
 			return fmt.Errorf("site %q: base_url is required", site.Name)
 		}
@@ -140,10 +149,11 @@ func buildExportNode(cfg *Config) map[string]any {
 	sites := make([]map[string]any, 0, len(cfg.Sites))
 	for _, s := range cfg.Sites {
 		item := map[string]any{
-			"name":            s.Name,
-			"base_url":        s.BaseURL,
-			"platform":        s.Platform,
-			"credential_type": s.CredentialType,
+			"name":                    s.Name,
+			"base_url":                s.BaseURL,
+			"platform":                s.Platform,
+			"credential_type":         s.CredentialType,
+			"additional_verification": s.AdditionalVerification,
 		}
 		switch s.CredentialType {
 		case CredentialAccessToken:
@@ -165,6 +175,24 @@ func buildExportNode(cfg *Config) map[string]any {
 	return map[string]any{
 		"timeout_seconds": cfg.TimeoutSeconds,
 		"sites":           sites,
+	}
+}
+
+func normalizeAdditionalVerification(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", AdditionalVerificationNone:
+		return AdditionalVerificationNone, nil
+	case strings.ToLower(AdditionalVerificationCaptcha):
+		return AdditionalVerificationCaptcha, nil
+	case strings.ToLower(AdditionalVerificationTurnstile):
+		return AdditionalVerificationTurnstile, nil
+	default:
+		return "", fmt.Errorf(
+			"additional_verification must be one of %q, %q, or %q",
+			AdditionalVerificationNone,
+			AdditionalVerificationCaptcha,
+			AdditionalVerificationTurnstile,
+		)
 	}
 }
 

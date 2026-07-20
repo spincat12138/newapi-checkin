@@ -190,6 +190,9 @@ func TestImportOctopusFileAndSave(t *testing.T) {
 	if !strings.Contains(string(raw), "credential_type: session_cookie") || !strings.Contains(string(raw), "session_cookie: session=abc123") {
 		t.Errorf("yaml missing explicit session cookie credential: %s", raw)
 	}
+	if strings.Count(string(raw), "additional_verification: none") != result.Imported {
+		t.Errorf("yaml must write additional_verification for every site: %s", raw)
+	}
 }
 
 func TestMapOctopusPlatform(t *testing.T) {

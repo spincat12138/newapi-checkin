@@ -34,14 +34,14 @@
 
 - 根因：部分站 `GET /api/user/checkin` 返回 `success:true` +「查询成功」+ `captcha_enabled`，旧逻辑误判为签到成功。
 - 修复：状态查询与签到动作分离；状态形态响应不得记为签到成功。
-- 流程：`GET` 状态 → 需要时 `POST captcha` → 交互/`-captcha-cmd` 填答案 → `POST checkin` 提交 → 可选再验 `checked_in_today`。
-- CLI：`-captcha-interactive` / `-captcha-cmd` / `-captcha-dir` / `-no-open-captcha`；示例 OCR 脚本 `scripts/solve_captcha.py`。
+- 流程：`GET` 状态 → 需要时 `POST captcha` → 2Captcha `ImageToTextTask` → `POST checkin` 提交 → 可选再验 `checked_in_today`。
+- 验证只读取 `TWOCAPTCHA_API_KEY`，不保存验证码图片，不提供人工输入或外部命令。
 
 ## Turnstile 人机验证（2026-07-19）
 
 - 站点例：`https://cngov.cc.cd`（`turnstile_check: true`）。
 - NewAPI：`POST /api/user/checkin?turnstile=<token>`；空 token 返回「Turnstile token 为空」。
-- 支持 `-turnstile-token` / `-turnstile-cmd` / 交互粘贴；示例 `scripts/solve_turnstile.py`（CapSolver/2captcha）。
+- 原生使用 2Captcha `TurnstileTaskProxyless`；删除一次性 token、交互粘贴、外部命令和 Python 脚本路径。
 - 与图片 captcha 分流，避免把 Turnstile 当 captcha 图片处理。
 
 ## user_id / New-Api-User（2026-07-19，简直了）
@@ -57,8 +57,3 @@
   1. NewAPI 状态里 `checked_in_today` 在 `data.stats` 下，旧解析读不到；
   2. `success:true` + 空 `message` 被默认成 `checkin success`。
 - 修复：解析嵌套 `stats`；动作成功必须有 `quota_awarded` / 明确成功文案 / 已签到文案；成功后尽量再查 `checked_in_today` 复核。
-
-## 可选后续（未做）
-
-见 `agent.md` §7。
-- 内置 OCR（当前外挂命令，避免 CGO/重依赖）

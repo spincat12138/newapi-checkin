@@ -36,7 +36,7 @@
 
 ### 1. 准备配置
 
-**方式 A：从 Octopus / AionUi accounts 备份 JSON 导入（推荐）**
+**方式 A：从 Octopus / ALL API HUB 备份 JSON 导入（推荐）**
 
 导出的备份一般为 `accounts-backup-*.json`，结构含 `accounts.accounts[]`：
 
@@ -85,6 +85,7 @@ sites:
     credential_type: "access_token"
     access_token: "xxx"
     user_id: 1
+    additional_verification: none
 ```
 
 或使用账密：
@@ -96,6 +97,7 @@ sites:
     credential_type: "username_password"
     username: "user"
     password: "pass"
+    additional_verification: none
 ```
 
 使用 Session Cookie：
@@ -107,6 +109,7 @@ sites:
     credential_type: "session_cookie"
     session_cookie: "session=xxx"
     user_id: 2
+    additional_verification: none
 ```
 
 `session_cookie` 必须是完整的 Cookie 请求头值（`name=value`），不要包含 `Cookie:` 前缀。
@@ -150,31 +153,25 @@ go run ./cmd/checkin -config config.yaml -log logs/checkin.log
 部分站点开启了签到验证码：`GET /api/user/checkin` 只是**状态查询**（`查询成功` / `captcha_enabled`），**不是**签到动作。程序会：
 
 1. 用 `GET /api/user/checkin?month=YYYY-MM` 判断 `checked_in_today` / `captcha_enabled`
-2. 若需验证码：`POST /api/user/checkin/captcha` 取图 → 识别/人工输入 → `POST /api/user/checkin` 提交 `captcha_id` + `captcha_answer`
+2. 若需验证码：`POST /api/user/checkin/captcha` 取图 → 2Captcha `ImageToTextTask` → `POST /api/user/checkin` 提交 `captcha_id` + `captcha_answer`
 3. 再查状态确认
 
-**半自动（推荐先用这个）**：终端交互输入（TTY 下默认开启；也可显式指定）：
+这类站点需要在对应配置中设置：
 
-```powershell
-go run ./cmd/checkin -config config.yaml -only "简直了" -captcha-interactive
+```yaml
+additional_verification: CAPTCHA
 ```
 
-会保存验证码图片、尽量用系统看图软件打开，并在终端等待你输入答案。
-
-**全自动（OCR）**：外挂识别命令，stdout 第一行非空文本作为答案：
+设置 2Captcha API Key 后直接运行：
 
 ```powershell
-pip install ddddocr
-go run ./cmd/checkin -config config.yaml -only "简直了" `
-  -captcha-cmd "python scripts/solve_captcha.py {image}"
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key"
+go run ./cmd/checkin -config config.yaml -only "简直了"
 ```
 
-说明：
+验证码图片仅在内存中编码并提交给 2Captcha，不写入本地文件。任务最多等待约 5 分钟，不计入站点 HTTP `-timeout`。
 
-- `-captcha-cmd` 中的 `{image}` 会替换为验证码图片路径；没有占位符时路径会作为最后一个参数追加
-- 验证码人工/OCR 等待最多约 5 分钟，不计入 `-timeout` 的 HTTP 超时
-- 无 TTY 的批处理（CI/计划任务）必须提供 `-captcha-cmd`，或不要包含需验证码的站点
-- OCR 准确率取决于验证码样式，失败可回退交互模式
+API 协议参考：[Normal CAPTCHA](https://2captcha.com/api-docs/normal-captcha) / [getTaskResult](https://2captcha.com/api-docs/get-task-result)。
 
 ### Cloudflare Turnstile 人机验证（如 cngov.cc.cd）
 
@@ -182,6 +179,14 @@ go run ./cmd/checkin -config config.yaml -only "简直了" `
 
 - `Turnstile token 为空`
 - `Turnstile 校验失败，请刷新重试！`
+
+这类站点需要在对应配置中设置：
+
+```yaml
+additional_verification: Turnstile
+```
+
+`Turnstile` 是按需模式：程序先尝试普通签到，只有接口明确返回 Turnstile 拒绝才向 2Captcha 创建 `TurnstileTaskProxyless` 任务。后端临时关闭验证时不会创建任务，也不会产生打码费用。
 
 正确提交方式是 **query 参数**（不是 body 里的 trusted_token）：
 
@@ -191,28 +196,16 @@ POST /api/user/checkin?turnstile=<TurnstileResponseToken>
 
 `/api/status` 里可看到 `turnstile_check` 与 `turnstile_site_key`（sitekey 绑定域名，**不能**在 localhost 自己渲 widget 骗过）。
 
-**半自动**：TTY 下默认会提示粘贴 token；也可显式：
+全自动运行：
 
 ```powershell
-go run ./cmd/checkin -config config.yaml -only "cngov" -captcha-interactive
-# 或直接传入一次性 token：
-go run ./cmd/checkin -config config.yaml -only "cngov" -turnstile-token "0.xxxx"
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key"
+go run ./cmd/checkin -config config.yaml -only "cngov"
 ```
 
-浏览器取 token 的大致方式：打开站点 → 登录 → F12 Network → 点签到 → 复制 `checkin?turnstile=` 后面的值（token 很短时效）。
+若使用已通过验证的 session cookie，普通签到可能直接成功；纯 API Token 通常会触发 2Captcha。程序不接受人工输入、外部求解命令或手工提供的一次性 token。
 
-**全自动（打码平台）**：
-
-```powershell
-$env:CAPSOLVER_API_KEY = "你的key"   # 或 TWOCAPTCHA_API_KEY
-go run ./cmd/checkin -config config.yaml -only "cngov" `
-  -turnstile-cmd "python scripts/solve_turnstile.py {sitekey} {url}"
-```
-
-说明：
-
-- 若使用**浏览器已通过人机验证的 session cookie** 登录，gin session 里可能已有 `turnstile` 标记，有时无需再传 token；`access_token` 纯 API 鉴权通常每次都要 token
-- Turnstile 与图片验证码是两条路径，不要混用 `-captcha-cmd` 去解 Turnstile
+API 协议参考：[Cloudflare Turnstile](https://2captcha.com/api-docs/cloudflare-turnstile)。
 
 ### 3. 编译
 
@@ -228,6 +221,7 @@ go build -o newapi-import-config.exe ./cmd/import-config
 本地构建并运行：
 
 ```powershell
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key" # 配置含 CAPTCHA / Turnstile 站点时需要
 docker compose build
 docker compose run --rm checkin
 ```
@@ -238,6 +232,7 @@ docker compose run --rm checkin
 
 ```powershell
 $env:NEWAPI_CHECKIN_IMAGE = "ghcr.io/spincat12138/newapi-checkin:latest"
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key"
 docker compose run --rm --no-build checkin
 ```
 
@@ -262,6 +257,7 @@ docker compose run --rm --no-build checkin
 | `sites[].session_cookie` | 完整 Cookie 值，仅用于 `session_cookie` |
 | `sites[].username` / `password` | 账密登录 |
 | `sites[].user_id` | **多数 NewAPI 站点必填**，用户 ID（对应请求头 `New-Api-User`） |
+| `sites[].additional_verification` | 附加验证方式：普通站点 `none`、图片验证码 `CAPTCHA`、Cloudflare 人机验证 `Turnstile`；默认 `none` |
 | `sites[].headers` | 可选自定义请求头 |
 
 ### 如何获取 `user_id`
@@ -293,7 +289,7 @@ New-Api-User: <你的用户ID>
 2. 按 `credential_type` 生成 Authorization 或 Cookie 请求头
 3. 必要时请求 `GET /api/user/self` 探测用户 ID
 4. `GET /api/user/checkin` 查状态（已签到 / 是否要验证码）；**不把「查询成功」当签到成功**
-5. 无验证：`POST`（必要时回退 `GET`）`/api/user/checkin`；图片验证码 / Turnstile 分别走对应流程（`?turnstile=`）
+5. 按 `additional_verification` 选择普通、图片验证码或 Turnstile 流程；不再根据全局状态字段自动切换验证方式
 6. 签到后请求 `GET /api/user/self` 获取当前总余额
 7. 成功或“已签到”都记为成功
 

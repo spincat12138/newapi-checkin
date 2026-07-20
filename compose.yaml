@@ -5,6 +5,7 @@ services:
       context: .
     environment:
       TZ: Asia/Shanghai
+      TWOCAPTCHA_API_KEY: ${TWOCAPTCHA_API_KEY:-}
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./logs:/logs

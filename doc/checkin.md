@@ -18,15 +18,16 @@ RunWithOptions(site, opts)
   →  6. checkinSite(token, userID, opts)
          a. GET /api/user/checkin?month=YYYY-MM 状态查询
             - checked_in_today / 已签到文案 → 成功（奖励 0）
-            - captcha_enabled → captcha 流程
-         b. 否则 POST（失败再试 GET）/api/user/checkin 无 body
-            - 响应若为状态形态 → 不当作签到成功
-            - 文案提示需要验证码 → captcha 流程
-         c. captcha 流程：
+         b. 按 additional_verification 选择动作
+            - none → POST（失败再试 GET）/api/user/checkin 无 body
+            - CAPTCHA → 图片验证码流程
+            - Turnstile → 已验证 session 先普通 POST，否则获取 token 后提交
+         c. CAPTCHA 流程：
             POST /api/user/checkin/captcha
-            → opts.SolveCaptcha（交互或 -captcha-cmd）
+            → 2Captcha ImageToTextTask
             → POST /api/user/checkin {captcha_id, captcha_answer}
             → 可选再 GET 状态核对 checked_in_today
+         d. none 路径若收到验证码拒绝，只提示修正配置，不自动切换流程
   →  7. 签到后请求 GET /api/user/self 获取当前总余额
   →  8. 返回签到时间、成功状态、奖励和总余额
 ```
@@ -40,7 +41,7 @@ RunWithOptions(site, opts)
 | 签到状态 | GET | `/api/user/checkin?month=YYYY-MM` | 解析 `checked_in_today` / `captcha_enabled` |
 | 取验证码 | POST | `/api/user/checkin/captcha` | 返回 `captcha_id` + 图片（data URL / base64） |
 | 签到 | POST（必要时 GET） | `/api/user/checkin` | 无验证码时空 body；图片验证码时提交 captcha 字段；Turnstile 时用 `?turnstile=` |
-| 站点公开状态 | GET | `/api/status` | 读取 `turnstile_check` / `turnstile_site_key` |
+| 站点公开状态 | GET | `/api/status` | 读取 `checkin_enabled`；Turnstile 流程读取 `turnstile_site_key` |
 
 URL：`base_url` 去尾 `/` 后拼接路径。
 
@@ -86,21 +87,15 @@ Reward 尝试从 `data.quota_awarded` / `data.quotaAwarded` / `data.reward` / `d
 
 ## 6. 图片验证码
 
-`Options.SolveCaptcha`：
+CLI 通过 `TWOCAPTCHA_API_KEY` 创建原生 2Captcha solver：
 
 | 来源 | 行为 |
 |------|------|
-| CLI TTY 默认 / `-captcha-interactive` | `InteractiveCaptchaSolver`：存图、可选打开、stdin 输入 |
-| `-captcha-cmd` | `CommandCaptchaSolver`：跑外部命令，stdout 首行答案 |
-| 均未提供 | 需验证码的站点失败，错误提示如何启用 |
+| `ImageToTextTask` | 将内存中的验证码图片编码为 base64 后提交 |
+| `getTaskResult` | 每 5 秒轮询，`ready` 后读取 `solution.text` |
+| 缺少 API Key | 明确提示设置 `TWOCAPTCHA_API_KEY` |
 
-外部命令约定：
-
-- 支持 `{image}` 占位符
-- 或将图片路径作为最后一个参数
-- 示例：`python scripts/solve_captcha.py {image}`（可选依赖 `ddddocr`）
-
-人工/OCR 等待使用独立 5 分钟超时（`context.WithoutCancel` + `captchaSolveTimeout`），与站点 HTTP `-timeout` 分离。
+验证码图片不写入本地文件，也不提供人工输入或外部命令入口。2Captcha 等待使用独立 5 分钟超时（`context.WithoutCancel` + `verificationSolveTimeout`），与站点 HTTP `-timeout` 分离。
 
 ## 6.1 Cloudflare Turnstile（人机验证 / trusted token）
 
@@ -116,15 +111,15 @@ NewAPI 路由：`POST /api/user/checkin` + `middleware.TurnstileCheck()`。
 
 | 来源 | 行为 |
 |------|------|
-| `-turnstile-token` | 直接使用一次性 token |
-| `-turnstile-cmd` | `CommandTurnstileSolver`，stdout 首行 token |
-| TTY 交互 | `InteractiveTurnstileSolver` 提示粘贴 |
+| `TurnstileTaskProxyless` | 使用站点 URL 与 `/api/status` 的 site key 创建任务 |
+| `getTaskResult` | `ready` 后读取 `solution.token` |
 | session 已验证 | 普通 POST 可能直接成功（无需 token） |
 
-占位符：`{sitekey}` `{url}` `{base_url}` `{site}`。
-示例：`python scripts/solve_turnstile.py {sitekey} {url}`（需 CapSolver/2captcha API key）。
+只有配置 `additional_verification: Turnstile` 才会进入这条流程。`/api/status` 的 `turnstile_check` 是站点全局开关，不能单独证明签到接口需要验证，因此不用于自动选择流程。
 
-检测到 `Turnstile token 为空` / `Turnstile 校验失败` 时走 Turnstile 流程，**不会**误进图片 captcha 流程。
+配置为 `none` 时若接口返回 `Turnstile token 为空` / `Turnstile 校验失败`，程序返回带配置修正提示的错误，但不会自动调用 Turnstile solver。
+
+程序只接受 2Captcha API 返回的 token，不提供人工粘贴、一次性 token 参数、外部命令或其他打码平台适配。
 
 ## 7. 奖励与总余额
 

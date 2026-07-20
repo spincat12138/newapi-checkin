@@ -23,6 +23,7 @@ sites:
     username: "..."                   # username_password 时必填
     password: "..."
     user_id: 1                        # 推荐填写；对应 New-Api-User
+    additional_verification: none    # none | CAPTCHA | Turnstile
     headers:                          # 可选，合并进请求
       X-Custom: value
 ```
@@ -50,12 +51,23 @@ sites:
 
 三种凭证字段不可混填。空 `credential_type` 时按 `session_cookie`、`access_token`、`username_password` 的字段存在性推断；显式填写更清晰。
 
+### additional_verification
+
+| 值 | 行为 |
+|----|------|
+| `none` | 普通签到，不调用任何验证码求解器；默认值 |
+| `CAPTCHA` | 获取图片验证码，通过 2Captcha `ImageToTextTask` 全自动求解 |
+| `Turnstile` | 先尝试普通签到；仅在接口明确要求时通过 2Captcha 获取 token 并重试 |
+
+该字段是验证流程的唯一事实来源。程序不会因为 `/api/status` 的全局 Turnstile 标记或接口错误文案，自动把 `none` 站点切换到其他验证流程。
+
 ## 3. Load 行为（`internal/config/config.go`）
 
 1. 读文件、YAML 反序列化
 2. `normalize`：
    - trim 字符串、`base_url` 去尾 `/`
    - platform / credential_type 小写
+   - additional_verification 大小写不敏感输入，归一为 `none` / `CAPTCHA` / `Turnstile`
    - 空 name → `site-N`
    - 校验凭证类型、对应字段和字段互斥关系
 3. `sites` 为空 → error
@@ -86,15 +98,9 @@ New-Api-User: <用户数字 ID>
 |------|------|
 | `-config` | Load 路径（签到） |
 | `-log` | 签到日志路径，默认 `checkin.log`，追加写入 |
-| `-captcha-cmd` | 图片验证码识别命令；`{image}` 占位或追加图片路径 |
-| `-captcha-interactive` | 强制终端人工输入（图片验证码 / Turnstile 粘贴） |
-| `-no-captcha-interactive` | 禁用人工输入（批处理需配合 `-captcha-cmd` / `-turnstile-cmd`） |
-| `-captcha-dir` | 验证码图片保存目录 |
-| `-no-open-captcha` | 不自动打开验证码图片 |
-| `-turnstile-token` | 一次性 Cloudflare Turnstile token |
-| `-turnstile-cmd` | 获取 Turnstile token 的命令；`{sitekey}` `{url}` `{base_url}` `{site}` |
-| `-no-open-turnstile-page` | 交互获取 Turnstile 时不自动打开站点 |
 | `-timeout` | 覆盖 `timeout_seconds`（仅运行时，不改文件） |
 | `-only` | 名称子串过滤（逗号分隔，大小写不敏感） |
 | import-config `-out` | Save 路径 |
 | import-config `-timeout` | 写入生成配置的 `timeout_seconds` |
+
+验证服务只读取环境变量 `TWOCAPTCHA_API_KEY`。程序不接受人工验证码、外部命令、浏览器 token 或其他打码平台结果。

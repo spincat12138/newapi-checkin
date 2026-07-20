@@ -179,9 +179,9 @@ func TestExtractBalanceUSDForOneAPIUsesRemainingQuota(t *testing.T) {
 	}
 }
 
-func TestRunNewAPIStatusWithNestedStatsDoesNotFakeSuccess(t *testing.T) {
-	// Reproduces cngov / 大喵喵: GET returns NewAPI GetCheckinStatus shape,
-	// POST without turnstile fails, must NOT log "checkin success" with 不可用 reward.
+func TestRunNoneVerificationDoesNotAutoDetectTurnstile(t *testing.T) {
+	// A normal site must stay on the plain path even when public status advertises
+	// Turnstile. Only additional_verification may select the solver path.
 	var postCount int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -206,18 +206,19 @@ func TestRunNewAPIStatusWithNestedStatsDoesNotFakeSuccess(t *testing.T) {
 	defer server.Close()
 
 	result := Run(context.Background(), config.Site{
-		Name:           "大喵喵API",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         48,
+		Name:                   "大喵喵API",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 48,
+		AdditionalVerification: config.AdditionalVerificationNone,
 	})
 	if result.Success {
 		t.Fatalf("expected failure without turnstile, got success message=%q reward=%q", result.Message, result.Reward)
 	}
-	if !strings.Contains(strings.ToLower(result.Error), "turnstile") {
-		t.Fatalf("expected turnstile-related error, got %q", result.Error)
+	if !strings.Contains(result.Error, "additional_verification") {
+		t.Fatalf("expected configuration guidance, got %q", result.Error)
 	}
 	if postCount == 0 {
 		t.Fatal("expected at least one POST checkin attempt")
@@ -341,12 +342,13 @@ func TestRunCaptchaFlowWithSolver(t *testing.T) {
 	defer server.Close()
 
 	result := RunWithOptions(context.Background(), config.Site{
-		Name:           "captcha-site",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         9,
+		Name:                   "captcha-site",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 9,
+		AdditionalVerification: config.AdditionalVerificationCaptcha,
 	}, Options{
 		SolveCaptcha: func(ctx context.Context, challenge CaptchaChallenge) (string, error) {
 			if challenge.CaptchaID != "cap-1" {
@@ -386,12 +388,13 @@ func TestRunCaptchaRequiredWithoutSolverFailsClearly(t *testing.T) {
 	defer server.Close()
 
 	result := Run(context.Background(), config.Site{
-		Name:           "captcha-needed",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         3,
+		Name:                   "captcha-needed",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 3,
+		AdditionalVerification: config.AdditionalVerificationCaptcha,
 	})
 	if result.Success {
 		t.Fatal("expected failure without captcha solver")
@@ -415,8 +418,9 @@ func TestInterpretCheckinPayloadRejectsQuerySuccessStatus(t *testing.T) {
 	}
 }
 
-func TestRunTurnstileCheckinWithToken(t *testing.T) {
+func TestRunTurnstileCheckinWithSolver(t *testing.T) {
 	var gotURL string
+	var solverCalls int
 	checkedIn := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -441,16 +445,19 @@ func TestRunTurnstileCheckinWithToken(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Without token: plain POST should fail with turnstile empty, then solver provides token.
 	result := RunWithOptions(context.Background(), config.Site{
-		Name:           "turnstile-site",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         11,
+		Name:                   "turnstile-site",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 11,
+		AdditionalVerification: config.AdditionalVerificationTurnstile,
 	}, Options{
-		TurnstileToken: "tok-abc",
+		SolveTurnstile: func(ctx context.Context, challenge TurnstileChallenge) (string, error) {
+			solverCalls++
+			return "tok-abc", nil
+		},
 	})
 	if !result.Success {
 		t.Fatalf("expected turnstile check-in success, got %q", result.Error)
@@ -458,7 +465,51 @@ func TestRunTurnstileCheckinWithToken(t *testing.T) {
 	if !strings.Contains(gotURL, "turnstile=tok-abc") {
 		t.Fatalf("expected turnstile query on checkin URL, got %q", gotURL)
 	}
+	if solverCalls != 1 {
+		t.Fatalf("expected one solver call, got %d", solverCalls)
+	}
 	assertFloatPointer(t, "reward USD", result.RewardUSD, 0.01)
+}
+
+func TestRunTurnstileAllowsPreviouslyVerifiedSession(t *testing.T) {
+	checkedIn := false
+	unexpectedToken := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/api/status":
+			fmt.Fprint(w, `{"success":true,"data":{"turnstile_check":true,"checkin_enabled":true}}`)
+		case r.URL.Path == "/api/user/checkin" && r.Method == http.MethodGet:
+			fmt.Fprintf(w, `{"success":true,"data":{"enabled":true,"stats":{"checked_in_today":%t}}}`, checkedIn)
+		case r.URL.Path == "/api/user/checkin" && r.Method == http.MethodPost:
+			if r.URL.Query().Get("turnstile") != "" {
+				unexpectedToken = true
+			}
+			checkedIn = true
+			fmt.Fprint(w, `{"success":true,"message":"签到成功","data":{"quota_awarded":1000}}`)
+		case r.URL.Path == "/api/user/self":
+			fmt.Fprint(w, `{"success":true,"data":{"quota":500000}}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	result := Run(context.Background(), config.Site{
+		Name:                   "verified-session",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialSessionCookie,
+		SessionCookie:          "session=verified",
+		UserID:                 12,
+		AdditionalVerification: config.AdditionalVerificationTurnstile,
+	})
+	if !result.Success {
+		t.Fatalf("expected verified session check-in success, got %q", result.Error)
+	}
+	if unexpectedToken {
+		t.Fatal("verified session should not need a token")
+	}
 }
 
 func TestRunTurnstileRequiredWithoutTokenFailsClearly(t *testing.T) {
@@ -480,12 +531,13 @@ func TestRunTurnstileRequiredWithoutTokenFailsClearly(t *testing.T) {
 	defer server.Close()
 
 	result := Run(context.Background(), config.Site{
-		Name:           "need-turnstile",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         5,
+		Name:                   "need-turnstile",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 5,
+		AdditionalVerification: config.AdditionalVerificationTurnstile,
 	})
 	if result.Success {
 		t.Fatal("expected failure without turnstile token")
@@ -522,12 +574,13 @@ func TestRunCheckinDisabledDoesNotAskTurnstile(t *testing.T) {
 	defer server.Close()
 
 	result := RunWithOptions(context.Background(), config.Site{
-		Name:           "no-checkin-site",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         1,
+		Name:                   "no-checkin-site",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 1,
+		AdditionalVerification: config.AdditionalVerificationTurnstile,
 	}, Options{
 		SolveTurnstile: func(ctx context.Context, challenge TurnstileChallenge) (string, error) {
 			turnstileSolverCalls++
@@ -555,7 +608,7 @@ func TestRunDoesNotPromptTurnstileBeforePlainCheckin(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case r.URL.Path == "/api/status":
-			fmt.Fprint(w, `{"success":true,"data":{"checkin_enabled":true}}`)
+			fmt.Fprint(w, `{"success":true,"data":{"checkin_enabled":true,"turnstile_check":true,"turnstile_site_key":"misleading-key"}}`)
 		case r.URL.Path == "/api/user/checkin" && r.Method == http.MethodGet:
 			fmt.Fprint(w, `{"success":true,"message":"查询成功","data":{"captcha_enabled":false,"checked_in_today":false}}`)
 		case r.URL.Path == "/api/user/checkin" && r.Method == http.MethodPost:
@@ -569,12 +622,13 @@ func TestRunDoesNotPromptTurnstileBeforePlainCheckin(t *testing.T) {
 	defer server.Close()
 
 	result := RunWithOptions(context.Background(), config.Site{
-		Name:           "normal-site",
-		BaseURL:        server.URL,
-		Platform:       PlatformNewAPI,
-		CredentialType: config.CredentialAccessToken,
-		AccessToken:    "test-token",
-		UserID:         2,
+		Name:                   "normal-site",
+		BaseURL:                server.URL,
+		Platform:               PlatformNewAPI,
+		CredentialType:         config.CredentialAccessToken,
+		AccessToken:            "test-token",
+		UserID:                 2,
+		AdditionalVerification: config.AdditionalVerificationNone,
 	}, Options{
 		SolveTurnstile: func(ctx context.Context, challenge TurnstileChallenge) (string, error) {
 			turnstileSolverCalls++

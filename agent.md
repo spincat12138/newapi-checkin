@@ -14,15 +14,6 @@
 | 目标 | **只做** NewAPI 系管理站的批量签到与签到后余额日志；不做余额持久化同步、代理池、调度、数据库 |
 | 上游参考 | Octopus `internal/sitesync` 中与 checkin 相关的请求约定 |
 
-典型数据流：
-
-```text
-Octopus/AionUi accounts-backup JSON
-        │  import-config 独立入口
-        ▼
-   config.yaml  ──►  checkin 主流程  ──►  各站点 /api/user/checkin
-```
-
 ---
 
 ## 2. 架构一览
@@ -56,7 +47,6 @@ internal/checkin/         # 签到（有网络）
 
 - 配置与网络逻辑分离：导入可单测、无需外网。
 - 签到按显式凭证类型选择 Authorization 或 Cookie，并兼容已签到中英文文案。
-- 不暴力枚举 `user_id`；配置优先，其次 `/api/user/self` 探测。
 - 密钥仅落在 `config.yaml`（已 gitignore）。
 
 详细模块说明与请求约定见：
@@ -102,18 +92,11 @@ go build -o newapi-import-config.exe ./cmd/import-config
 .\newapi-import-config.exe -from accounts-backup.json -out config.yaml -require-auto-checkin
 
 # 签到
+$env:TWOCAPTCHA_API_KEY = "你的 2Captcha API Key" # CAPTCHA / Turnstile 全自动求解
 .\newapi-checkin.exe -config config.yaml
 .\newapi-checkin.exe -config config.yaml -only "关键字1,关键字2"
 .\newapi-checkin.exe -config config.yaml -timeout 60
 .\newapi-checkin.exe -config config.yaml -log logs\checkin.log
-
-# 图片验证码站（半自动 / OCR）
-.\newapi-checkin.exe -config config.yaml -only "简直了" -captcha-interactive
-.\newapi-checkin.exe -config config.yaml -only "简直了" -captcha-cmd "python scripts/solve_captcha.py {image}"
-
-# Turnstile 人机验证站（如 cngov）
-.\newapi-checkin.exe -config config.yaml -only "cngov" -turnstile-token "0.xxx"
-.\newapi-checkin.exe -config config.yaml -only "cngov" -turnstile-cmd "python scripts/solve_turnstile.py {sitekey} {url}"
 
 # 帮助
 .\newapi-checkin.exe help
@@ -191,12 +174,6 @@ go run ./cmd/checkin -config config.yaml -timeout 60
    - `README.md`：人类用户快速开始
 
 ---
-
-## 7. 已知可选后续
-
-- 导入时与已有 `config.yaml` 按 `base_url` **merge**
-- 导入侧 `-only` 名称过滤
-- 签到结果落盘日志 / 定时任务对接
 
 ---
 

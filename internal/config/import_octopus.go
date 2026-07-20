@@ -148,11 +148,12 @@ func ImportOctopus(data []byte, opts OctopusImportOptions) (*ImportResult, error
 		}
 
 		site := Site{
-			Name:           name,
-			BaseURL:        baseURL,
-			Platform:       platform,
-			CredentialType: credentialType,
-			UserID:         parseOctopusUserID(acc.AccountInfo.ID),
+			Name:                   name,
+			BaseURL:                baseURL,
+			Platform:               platform,
+			CredentialType:         credentialType,
+			UserID:                 parseOctopusUserID(acc.AccountInfo.ID),
+			AdditionalVerification: AdditionalVerificationNone,
 		}
 		if credentialType == CredentialSessionCookie {
 			site.SessionCookie = credentialValue
