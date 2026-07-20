@@ -141,7 +141,7 @@ go test ./internal/config/ -count=1 -v
 - 已签到奖励为 0、余额未知不伪装成 0、CLI 日志格式与文件追加
 - `access_token` / `session_cookie` 请求头隔离、Cookie 导入映射和混填校验
 - 状态查询（查询成功）不得记为签到成功；验证码流程 + solver 提交
-- Telegram Markdown 表格、失败备注、消息分片、代理与 Bot Token 脱敏
+- Telegram Rich Markdown 原生表格、特殊字符转义、消息分片、代理与 Bot Token 脱敏
 
 ### 5.2 手工集成（需真实站点与 token）
 

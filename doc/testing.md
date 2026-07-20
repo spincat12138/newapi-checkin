@@ -16,7 +16,7 @@ go test ./internal/config/ -count=1 -v
 |----|------|--------|
 | `internal/config` | `config_test.go` / `import_octopus_test.go` | 凭证互斥校验、导入过滤、显式 Cookie 映射、Save/Load 往返 |
 | `internal/checkin` | `checkin_test.go` / `http_test.go` / `twocaptcha_test.go` | 鉴权、奖励、余额、状态判定、验证码提交、Turnstile、2Captcha 创建任务/轮询/错误 |
-| `internal/notification` | `telegram_test.go` | Markdown 表格、失败备注、消息分片、代理、API 错误、Bot Token 脱敏 |
+| `internal/notification` | `telegram_test.go` | Rich Markdown 原生表格、特殊字符转义、失败备注、字符/行数分片、代理、API 错误、Bot Token 脱敏 |
 | `internal/report` | `format_test.go` | CLI / Telegram 共用金额格式 |
 | `cmd/checkin` | `main_test.go` | 成功/失败日志格式、未知金额展示、文件追加写入 |
 | `cmd/import-config` | `main_test.go` | 必填输入校验、独立入口生成可加载的 YAML |

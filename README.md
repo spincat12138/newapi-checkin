@@ -176,7 +176,9 @@ telegram:
 | 失败站点 | 否 | 不可用 | 不可用 | 请求超时 |
 ```
 
-Telegram 不原生渲染表格语法，因此消息使用 MarkdownV2 预格式化代码块发送，以完整保留表格行列。结果过长时会自动拆成多条消息。发送开始、成功或失败状态都会写入控制台和签到日志；通知失败时返回退出码 `1`，Bot Token 不会出现在错误日志中。
+程序使用 Bot API 10.1+ 的 `sendRichMessage` 和 Rich Markdown 发送 GFM 管道表格，Telegram 客户端会将其渲染为原生表格。表格内容会转义站点名、金额和备注中的 Markdown 特殊字符；超过 32768 字符或安全行数上限时自动拆成多条消息。发送开始、成功或失败状态都会写入控制台和签到日志；通知失败时返回退出码 `1`，Bot Token 不会出现在错误日志中。
+
+协议参考：[Rich Markdown style](https://core.telegram.org/bots/api#rich-markdown-style) / [sendRichMessage](https://core.telegram.org/bots/api#sendrichmessage)。
 
 ### 图片验证码签到（如「简直了」jianzhile.vip）
 
